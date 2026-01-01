@@ -2,44 +2,11 @@ import { View, Text, TouchableOpacity, Alert, StyleSheet, ScrollView, Linking } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { seedSampleData, clearAllData } from '@/lib/storage';
-import { router, useFocusEffect } from 'expo-router';
-import { useState, useCallback } from 'react';
-import { getCurrentUser, logout, type User } from '@/lib/auth';
+import { router } from 'expo-router';
 import { sendLocalNotification } from '@/lib/notifications';
 
 export default function ProfileScreen() {
-  const [user, setUser] = useState<User | null>(null);
 
-  const loadUser = useCallback(async () => {
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-  }, []);
-
-  // Reload user when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadUser();
-    }, [loadUser])
-  );
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Apakah Anda yakin ingin keluar?',
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            setUser(null);
-            Alert.alert('Berhasil', 'Anda telah logout. Data lokal tetap tersimpan.');
-          },
-        },
-      ]
-    );
-  };
   const handleSeedData = async () => {
     try {
       await seedSampleData();
@@ -140,77 +107,13 @@ export default function ProfileScreen() {
             <Ionicons name="person" size={32} color="#3b82f6" />
           </View>
           <View style={styles.userInfo}>
-            {user ? (
-              <>
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userEmail}>{user.email}</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.userName}>Mode Offline</Text>
-                <Text style={styles.userEmail}>Login untuk sync data</Text>
-              </>
-            )}
+            <Text style={styles.userName}>Mode Offline</Text>
+            <Text style={styles.userEmail}>Semua data tersimpan lokal</Text>
           </View>
-          {!user && (
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => router.push('/login')}
-            >
-              <Ionicons name="log-in-outline" size={20} color="#3b82f6" />
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
-          {/* Account */}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              if (user) {
-                router.push('/account');
-              } else {
-                router.push('/login');
-              }
-            }}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#eff6ff' }]}>
-              <Ionicons name="person-outline" size={20} color="#3b82f6" />
-            </View>
-            <Text style={styles.menuTitle}>Account</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-
-          {/* API Keys */}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => {
-              if (user) {
-                router.push('/api-keys');
-              } else {
-                router.push('/login');
-              }
-            }}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#eff6ff' }]}>
-              <Ionicons name="key-outline" size={20} color="#3b82f6" />
-            </View>
-            <Text style={styles.menuTitle}>API Keys</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-
-          {/* MCP Connector */}
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => handleComingSoon('MCP Connector')}
-          >
-            <View style={[styles.menuIcon, { backgroundColor: '#eff6ff' }]}>
-              <Ionicons name="git-network-outline" size={20} color="#3b82f6" />
-            </View>
-            <Text style={styles.menuTitle}>MCP Connector</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
 
           {/* Export Data */}
           <TouchableOpacity
@@ -326,19 +229,6 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Logout Button */}
-        {user && (
-          <View style={styles.logoutContainer}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* Version */}
         <View style={styles.versionContainer}>

@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { API_URL } from '@/lib/api';
+
+// Offline mode - API features disabled in main branch
+const API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
 interface ReceiptUploadProps {
   onExtractComplete: (items: Array<{ name: string; price: number }>, extractedData?: any) => void;
