@@ -23,6 +23,7 @@ const STORAGE_KEYS = {
   TRANSACTIONS: '@ingat_uang:transactions',
   CATEGORIES: '@ingat_uang:categories',
   SUBSCRIPTIONS: '@ingat_uang:subscriptions',
+  SPLIT_BILLS: '@ingat_uang:split_bills',
 };
 
 // Default categories
@@ -76,7 +77,13 @@ export async function getCategoryById(id: string): Promise<Category | undefined>
 export async function getTransactions(): Promise<Transaction[]> {
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
-    return data ? JSON.parse(data) : [];
+    const transactions = data ? JSON.parse(data) : [];
+    console.log('📊 [Storage] getTransactions called');
+    console.log('📊 [Storage] Total transactions:', transactions.length);
+    if (transactions.length > 0) {
+      console.log('📊 [Storage] Latest transaction:', JSON.stringify(transactions[transactions.length - 1], null, 2));
+    }
+    return transactions;
   } catch (error) {
     console.error('Error getting transactions:', error);
     return [];
@@ -84,11 +91,32 @@ export async function getTransactions(): Promise<Transaction[]> {
 }
 
 export async function getTransactionsByMonth(year: number, month: number): Promise<Transaction[]> {
+  console.log('📅 [Storage] getTransactionsByMonth called:', { year, month });
   const allTransactions = await getTransactions();
-  return allTransactions.filter(t => {
+  console.log('📅 [Storage] All transactions count:', allTransactions.length);
+  
+  const filtered = allTransactions.filter(t => {
     const date = new Date(t.date);
-    return date.getFullYear() === year && date.getMonth() + 1 === month;
+    const transactionYear = date.getFullYear();
+    const transactionMonth = date.getMonth() + 1;
+    const matches = transactionYear === year && transactionMonth === month;
+    
+    if (allTransactions.length < 10) { // Only log details if not too many
+      console.log('📅 [Storage] Transaction:', {
+        id: t.id,
+        date: t.date,
+        year: transactionYear,
+        month: transactionMonth,
+        matches,
+        amount: t.amount,
+      });
+    }
+    
+    return matches;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  console.log('📅 [Storage] Filtered transactions for', year, month, ':', filtered.length);
+  return filtered;
 }
 
 export async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
@@ -404,6 +432,34 @@ export async function addSubscription(
     
     subscriptions.push(newSubscription);
     await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions));
+    
+    // Create transaction for subscription (use today's date, not start date)
+    const categories = await getCategories();
+    let subscriptionCategory = categories.find(c => c.name === 'Langganan');
+    
+    // If "Langganan" category doesn't exist, create it
+    if (!subscriptionCategory) {
+      const newCategory: Category = {
+        id: Date.now().toString() + '_sub',
+        name: 'Langganan',
+        icon: '📱',
+        color: '#8b5cf6',
+        type: 'EXPENSE',
+      };
+      categories.push(newCategory);
+      await AsyncStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+      subscriptionCategory = newCategory;
+    }
+    
+    // Add transaction with today's date
+    await addTransaction({
+      type: 'EXPENSE',
+      amount: subscription.amount,
+      categoryId: subscriptionCategory.id,
+      notes: `Langganan ${subscription.name}${subscription.description ? ` - ${subscription.description}` : ''}`,
+      date: new Date().toISOString(), // Use today's date instead of start date
+    });
+    
     return newSubscription;
   } catch (error) {
     console.error('Error adding subscription:', error);
@@ -492,4 +548,319 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
     yearlyCost: Math.round(yearlyCost),
     upcomingRenewals,
   };
+}
+
+// Budget Management
+export interface Budget {
+  id: string;
+  categoryId: string;
+  amount: number;
+  month: number; // 1-12
+  year: number;
+  createdAt: string;
+}
+
+const BUDGET_KEY = '@ingat_uang:budgets';
+
+// Get all budgets
+export async function getBudgets(): Promise<Budget[]> {
+  try {
+    const data = await AsyncStorage.getItem(BUDGET_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting budgets:', error);
+    return [];
+  }
+}
+
+// Get budget for specific category and month
+export async function getBudget(categoryId: string, year: number, month: number): Promise<Budget | undefined> {
+  const budgets = await getBudgets();
+  return budgets.find(b => b.categoryId === categoryId && b.year === year && b.month === month);
+}
+
+// Get all budgets for a specific month
+export async function getBudgetsByMonth(year: number, month: number): Promise<Budget[]> {
+  const budgets = await getBudgets();
+  return budgets.filter(b => b.year === year && b.month === month);
+}
+
+// Set or update budget
+export async function setBudget(categoryId: string, amount: number, year: number, month: number): Promise<Budget> {
+  try {
+    const budgets = await getBudgets();
+    const existingIndex = budgets.findIndex(
+      b => b.categoryId === categoryId && b.year === year && b.month === month
+    );
+
+    if (existingIndex >= 0) {
+      // Update existing budget
+      budgets[existingIndex].amount = amount;
+      await AsyncStorage.setItem(BUDGET_KEY, JSON.stringify(budgets));
+      return budgets[existingIndex];
+    } else {
+      // Create new budget
+      const newBudget: Budget = {
+        id: Date.now().toString(),
+        categoryId,
+        amount,
+        month,
+        year,
+        createdAt: new Date().toISOString(),
+      };
+      budgets.push(newBudget);
+      await AsyncStorage.setItem(BUDGET_KEY, JSON.stringify(budgets));
+      return newBudget;
+    }
+  } catch (error) {
+    console.error('Error setting budget:', error);
+    throw error;
+  }
+}
+
+// Delete budget
+export async function deleteBudget(categoryId: string, year: number, month: number): Promise<void> {
+  try {
+    const budgets = await getBudgets();
+    const filtered = budgets.filter(
+      b => !(b.categoryId === categoryId && b.year === year && b.month === month)
+    );
+    await AsyncStorage.setItem(BUDGET_KEY, JSON.stringify(filtered));
+  } catch (error) {
+    console.error('Error deleting budget:', error);
+    throw error;
+  }
+}
+
+// Get budget summary for a month
+export interface BudgetSummary {
+  totalBudget: number;
+  totalSpent: number;
+  remaining: number;
+  percentage: number;
+  categories: {
+    categoryId: string;
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+    budget: number;
+    spent: number;
+    remaining: number;
+    percentage: number;
+  }[];
+}
+
+export async function getBudgetSummary(year: number, month: number): Promise<BudgetSummary> {
+  const budgets = await getBudgetsByMonth(year, month);
+  const transactions = await getTransactionsByMonth(year, month);
+  const categories = await getCategories();
+  
+  let totalBudget = 0;
+  let totalSpent = 0;
+  
+  const categoryData = budgets.map(budget => {
+    const category = categories.find(c => c.id === budget.categoryId);
+    const spent = transactions
+      .filter(t => t.type === 'EXPENSE' && t.categoryId === budget.categoryId)
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    totalBudget += budget.amount;
+    totalSpent += spent;
+    
+    const remaining = budget.amount - spent;
+    const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+    
+    return {
+      categoryId: budget.categoryId,
+      categoryName: category?.name || 'Unknown',
+      categoryIcon: category?.icon || '💸',
+      categoryColor: category?.color || '#6366f1',
+      budget: budget.amount,
+      spent,
+      remaining,
+      percentage,
+    };
+  });
+  
+  const remaining = totalBudget - totalSpent;
+  const percentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+  
+  return {
+    totalBudget,
+    totalSpent,
+    remaining,
+    percentage,
+    categories: categoryData.sort((a, b) => b.spent - a.spent),
+  };
+}
+
+
+// ============================================
+// SPLIT BILL
+// ============================================
+
+export interface SplitBillItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+export interface SplitBillPerson {
+  id: string;
+  name: string;
+}
+
+export interface SplitBillAssignment {
+  itemId: string;
+  personId: string;
+}
+
+export interface SplitBill {
+  id: string;
+  title: string;
+  items: SplitBillItem[];
+  persons: SplitBillPerson[];
+  assignments: SplitBillAssignment[];
+  taxPercentage: number;
+  servicePercentage: number;
+  subtotal: number;
+  total: number;
+  createdAt: string;
+}
+
+export interface SplitBillPersonSummary {
+  personId: string;
+  personName: string;
+  items: Array<{
+    itemId: string;
+    itemName: string;
+    itemPrice: number;
+    quantity: number;
+    sharedWith: number;
+    share: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  service: number;
+  total: number;
+}
+
+// Get all split bills
+export async function getSplitBills(): Promise<SplitBill[]> {
+  try {
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.SPLIT_BILLS);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error getting split bills:', error);
+    return [];
+  }
+}
+
+// Get split bill by ID
+export async function getSplitBillById(id: string): Promise<SplitBill | null> {
+  try {
+    const splitBills = await getSplitBills();
+    return splitBills.find(sb => sb.id === id) || null;
+  } catch (error) {
+    console.error('Error getting split bill:', error);
+    return null;
+  }
+}
+
+// Add split bill
+export async function addSplitBill(
+  splitBill: Omit<SplitBill, 'id' | 'createdAt'>
+): Promise<SplitBill> {
+  try {
+    const splitBills = await getSplitBills();
+    
+    const newSplitBill: SplitBill = {
+      ...splitBill,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+    };
+    
+    splitBills.push(newSplitBill);
+    await AsyncStorage.setItem(STORAGE_KEYS.SPLIT_BILLS, JSON.stringify(splitBills));
+    
+    return newSplitBill;
+  } catch (error) {
+    console.error('Error adding split bill:', error);
+    throw error;
+  }
+}
+
+// Delete split bill
+export async function deleteSplitBill(id: string): Promise<void> {
+  try {
+    const splitBills = await getSplitBills();
+    const filtered = splitBills.filter(sb => sb.id !== id);
+    await AsyncStorage.setItem(STORAGE_KEYS.SPLIT_BILLS, JSON.stringify(filtered));
+  } catch (error) {
+    console.error('Error deleting split bill:', error);
+    throw error;
+  }
+}
+
+// Calculate split bill summary per person
+export function calculateSplitBillSummary(splitBill: SplitBill): SplitBillPersonSummary[] {
+  const summaries: SplitBillPersonSummary[] = [];
+  
+  // Calculate subtotal
+  const subtotal = splitBill.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Calculate additional charges
+  const taxAmount = (subtotal * splitBill.taxPercentage) / 100;
+  const serviceAmount = (subtotal * splitBill.servicePercentage) / 100;
+  const totalAdditionalCharges = taxAmount + serviceAmount;
+  
+  splitBill.persons.forEach(person => {
+    const personItems: SplitBillPersonSummary['items'] = [];
+    let personSubtotal = 0;
+    
+    splitBill.items.forEach(item => {
+      // Count how many people share this item
+      const sharedWith = splitBill.assignments.filter(a => a.itemId === item.id).length;
+      
+      // Check if this person is assigned to this item
+      const isAssigned = splitBill.assignments.some(
+        a => a.itemId === item.id && a.personId === person.id
+      );
+      
+      if (isAssigned && sharedWith > 0) {
+        const itemTotal = item.price * item.quantity;
+        const share = itemTotal / sharedWith;
+        
+        personItems.push({
+          itemId: item.id,
+          itemName: item.name,
+          itemPrice: item.price,
+          quantity: item.quantity,
+          sharedWith,
+          share,
+        });
+        
+        personSubtotal += share;
+      }
+    });
+    
+    // Calculate proportional additional charges
+    const proportion = subtotal > 0 ? personSubtotal / subtotal : 0;
+    const personTax = taxAmount * proportion;
+    const personService = serviceAmount * proportion;
+    const personTotal = personSubtotal + personTax + personService;
+    
+    summaries.push({
+      personId: person.id,
+      personName: person.name,
+      items: personItems,
+      subtotal: personSubtotal,
+      tax: personTax,
+      service: personService,
+      total: personTotal,
+    });
+  });
+  
+  return summaries;
 }

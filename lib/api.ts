@@ -1,6 +1,6 @@
 import { getAuthToken } from './auth';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://ingatuang.vercel.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -9,7 +9,6 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
-// Fetch with auth token
 export async function fetchWithAuth(
   endpoint: string,
   options: RequestInit = {}
@@ -25,13 +24,11 @@ export async function fetchWithAuth(
     'Content-Type': 'application/json',
   };
 
-  // Merge existing headers
   if (options.headers) {
     const existingHeaders = options.headers as Record<string, string>;
     Object.assign(headers, existingHeaders);
   }
 
-  // Add auth token if available
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -50,7 +47,6 @@ export async function fetchWithAuth(
   return response;
 }
 
-// GET request
 export async function apiGet<T = any>(endpoint: string): Promise<ApiResponse<T>> {
   try {
     const response = await fetchWithAuth(endpoint, {
@@ -79,7 +75,6 @@ export async function apiGet<T = any>(endpoint: string): Promise<ApiResponse<T>>
   }
 }
 
-// POST request
 export async function apiPost<T = any>(
   endpoint: string,
   body: any
@@ -112,7 +107,6 @@ export async function apiPost<T = any>(
   }
 }
 
-// PUT request
 export async function apiPut<T = any>(
   endpoint: string,
   body: any
@@ -145,7 +139,6 @@ export async function apiPut<T = any>(
   }
 }
 
-// DELETE request
 export async function apiDelete<T = any>(endpoint: string): Promise<ApiResponse<T>> {
   try {
     const response = await fetchWithAuth(endpoint, {
@@ -174,5 +167,17 @@ export async function apiDelete<T = any>(endpoint: string): Promise<ApiResponse<
   }
 }
 
-// Export API URL for direct use
 export { API_URL };
+
+export const api = {
+  get: apiGet,
+  post: async (endpoint: string, body: any) => {
+    const response = await fetchWithAuth(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return { ok: response.ok, json: () => response.json() };
+  },
+  put: apiPut,
+  delete: apiDelete,
+};

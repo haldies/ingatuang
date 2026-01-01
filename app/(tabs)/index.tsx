@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   ScrollView,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,10 +24,11 @@ import {
   type Category,
 } from '@/lib/storage';
 import { formatMonthYear } from '@/lib/format';
-import { SummaryCard } from '@/components/dashboard/summary-card';
+import { BalanceCard } from '@/components/dashboard/balance-card';
 import { TransactionItem } from '@/components/dashboard/transaction-item';
 import { AddTransactionModal } from '@/components/transactions/add-transaction-modal';
 import { eventEmitter, EVENTS } from '@/lib/events';
+import { updateWidget } from '@/lib/widget';
 
 export default function DashboardScreen() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -54,28 +56,48 @@ export default function DashboardScreen() {
     try {
       if (isRefresh) {
         setRefreshing(true);
+        console.log('🔄 [Dashboard] Refreshing data...');
       } else {
         setLoading(true);
+        console.log('📊 [Dashboard] Loading initial data...');
       }
 
       await initializeCategories();
 
+      console.log('📅 [Dashboard] Loading data for:', year, month);
       const [statsData, transactionsData, categoriesData] = await Promise.all([
         getDashboardStats(year, month),
         getTransactionsByMonth(year, month),
         getCategories(),
       ]);
 
+      console.log('📊 [Dashboard] Stats loaded:', {
+        totalIncome: statsData.totalIncome,
+        totalExpense: statsData.totalExpense,
+        balance: statsData.balance,
+        transactionCount: statsData.transactionCount,
+      });
+      console.log('📊 [Dashboard] Transactions loaded:', transactionsData.length);
+      console.log('📊 [Dashboard] Categories loaded:', categoriesData.length);
+
       setStats(statsData);
       setTransactions(transactionsData);
       setCategories(categoriesData);
+
+      // Update widget with latest data
+      updateWidget({
+        balance: statsData.balance,
+        income: statsData.totalIncome,
+        expense: statsData.totalExpense,
+        month: formatMonthYear(currentDate),
+      });
     } catch (err) {
-      console.error('Error loading dashboard:', err);
+      console.error('❌ [Dashboard] Error loading dashboard:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [year, month]);
+  }, [year, month, currentDate]);
 
   useEffect(() => {
     loadData();
@@ -88,9 +110,18 @@ export default function DashboardScreen() {
     eventEmitter.on(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
     eventEmitter.on(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
 
+    // Listen for app state changes (when app comes to foreground)
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('📱 [Dashboard] App became active, refreshing data...');
+        loadData(true);
+      }
+    });
+
     return () => {
       eventEmitter.off(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
       eventEmitter.off(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
+      subscription.remove();
     };
   }, [loadData]);
 
@@ -260,32 +291,8 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Summary Cards */}
-      {stats && (
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryCardWrapper}>
-              <SummaryCard
-                title="Pemasukan"
-                value={stats.totalIncome}
-                change={stats.incomeChange}
-              />
-            </View>
-            <View style={styles.summaryCardWrapper}>
-              <SummaryCard
-                title="Pengeluaran"
-                value={stats.totalExpense}
-                change={stats.expenseChange}
-              />
-            </View>
-          </View>
-          <SummaryCard
-            title="Balance"
-            value={stats.balance}
-            change={stats.balanceChange}
-          />
-        </View>
-      )}
+      {/* Balance Card */}
+      {stats && <BalanceCard stats={stats} />}
 
       {/* Transactions Header */}
       {filteredTransactions.length > 0 && (

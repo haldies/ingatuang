@@ -59,7 +59,6 @@ export default function SubscriptionsScreen() {
   useEffect(() => {
     loadData();
 
-    // Listen for subscription events
     const handleSubscriptionEvent = () => {
       loadData(true);
     };
@@ -125,7 +124,7 @@ export default function SubscriptionsScreen() {
 
     if (upcomingSubscriptions.length === 0) {
       Alert.alert(
-        '✅ Tidak Ada Pengingat',
+        'Tidak Ada Pengingat',
         'Tidak ada langganan yang akan jatuh tempo dalam 7 hari ke depan.',
         [{ text: 'OK' }]
       );
@@ -154,12 +153,6 @@ export default function SubscriptionsScreen() {
       );
     }
 
-    // Show confirmation
-    Alert.alert(
-      '✅ Notifikasi Terkirim',
-      `${upcomingSubscriptions.length} notifikasi pengingat telah dikirim. Cek notification tray Android Anda!`,
-      [{ text: 'OK' }]
-    );
   };
 
   if (loading) {

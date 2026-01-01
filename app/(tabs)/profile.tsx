@@ -1,10 +1,11 @@
-import { View, Text, TouchableOpacity, Alert, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, StyleSheet, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { seedSampleData, clearAllData } from '@/lib/storage';
 import { router, useFocusEffect } from 'expo-router';
 import { useState, useCallback } from 'react';
 import { getCurrentUser, logout, type User } from '@/lib/auth';
+import { sendLocalNotification } from '@/lib/notifications';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
@@ -78,9 +79,56 @@ export default function ProfileScreen() {
     Alert.alert('Segera Hadir', `Fitur ${feature} akan segera tersedia`);
   };
 
+  const handleReportBug = () => {
+    Linking.openURL('mailto:support@ingatuang.com?subject=Bug Report - IngatUang Mobile&body=Deskripsi Bug:%0D%0A%0D%0ALangkah untuk Reproduksi:%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AHasil yang Diharapkan:%0D%0A%0D%0AHasil Aktual:%0D%0A');
+  };
+
+  const handleGiveFeedback = () => {
+    Linking.openURL('mailto:feedback@ingatuang.com?subject=Feedback - IngatUang Mobile&body=Feedback:%0D%0A%0D%0A');
+  };
+
+  const handleRateApp = async () => {
+    const playStoreUrl = 'market://details?id=com.ingatuang.app'; // Ganti dengan package name yang sesuai
+    const playStoreWebUrl = 'https://play.google.com/store/apps/details?id=com.ingatuang.app';
+    
+    try {
+      const supported = await Linking.canOpenURL(playStoreUrl);
+      if (supported) {
+        await Linking.openURL(playStoreUrl);
+      } else {
+        await Linking.openURL(playStoreWebUrl);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Tidak dapat membuka Play Store');
+    }
+  };
+
+  const handleTestNotification = async () => {
+    console.log('[TEST] Button pressed - Testing notification...');
+    try {
+      const result = await sendLocalNotification(
+        '🔔 Test Notification',
+        'Ini adalah test notifikasi dari Ingat Uang!',
+        { test: true, timestamp: Date.now() }
+      );
+      console.log('[TEST] Notification result:', result);
+      Alert.alert(
+        'Test Notifikasi',
+        result 
+          ? `Notifikasi berhasil dikirim! ID: ${result}\n\nCek notification tray di HP kamu.`
+          : 'Notifikasi gagal dikirim. Cek console log untuk detail error.'
+      );
+    } catch (error) {
+      console.error('[TEST] Error in handleTestNotification:', error);
+      Alert.alert('Error', `Gagal mengirim notifikasi: ${error}`);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profil</Text>
@@ -188,15 +236,15 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
-          {/* Upgrade */}
+          {/* Remove Ads */}
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => handleComingSoon('Upgrade')}
+            onPress={() => handleComingSoon('Remove Ads')}
           >
-            <View style={[styles.menuIcon, { backgroundColor: '#eff6ff' }]}>
-              <Ionicons name="card-outline" size={20} color="#3b82f6" />
+            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="close-circle-outline" size={20} color="#f59e0b" />
             </View>
-            <Text style={styles.menuTitle}>Upgrade</Text>
+            <Text style={styles.menuTitle}>Remove Ads</Text>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
@@ -211,12 +259,56 @@ export default function ProfileScreen() {
             <Text style={styles.menuTitle}>Help</Text>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
+
+          {/* Report a Bug */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleReportBug}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="bug-outline" size={20} color="#f59e0b" />
+            </View>
+            <Text style={styles.menuTitle}>Report a Bug</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+
+          {/* Give Feedback */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleGiveFeedback}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#dbeafe' }]}>
+              <Ionicons name="chatbox-ellipses-outline" size={20} color="#3b82f6" />
+            </View>
+            <Text style={styles.menuTitle}>Give Feedback</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+
+          {/* Rate on Play Store */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleRateApp}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: '#dcfce7' }]}>
+              <Ionicons name="star-outline" size={20} color="#22c55e" />
+            </View>
+            <Text style={styles.menuTitle}>Rate IngatUang on Play Store</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
         </View>
 
         {/* Development Tools Section */}
         <View style={styles.devSection}>
           <Text style={styles.sectionTitle}>DEVELOPMENT TOOLS</Text>
           <View style={styles.menuContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleTestNotification}>
+              <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+                <Ionicons name="notifications" size={20} color="#f59e0b" />
+              </View>
+              <Text style={styles.menuTitle}>Test Notifikasi</Text>
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.menuItem} onPress={handleSeedData}>
               <View style={[styles.menuIcon, { backgroundColor: '#dbeafe' }]}>
                 <Ionicons name="add-circle" size={20} color="#3b82f6" />

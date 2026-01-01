@@ -4,7 +4,9 @@ import { Platform } from 'react-native';
 // Configure notification handler
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowAlert: false, // Deprecated, use shouldShowBanner instead
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -12,29 +14,45 @@ Notifications.setNotificationHandler({
 
 // Request notification permissions
 export async function requestNotificationPermissions() {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#3b82f6',
-    });
-  }
+  try {
+    console.log('[NOTIF] Starting permission request...');
+    console.log('[NOTIF] Platform:', Platform.OS);
+    
+    if (Platform.OS === 'android') {
+      console.log('[NOTIF] Setting up Android notification channel...');
+      const channel = await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#3b82f6',
+      });
+      console.log('[NOTIF] Channel created:', channel);
+    }
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+    console.log('[NOTIF] Checking existing permissions...');
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    console.log('[NOTIF] Existing status:', existingStatus);
+    
+    let finalStatus = existingStatus;
 
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
+    if (existingStatus !== 'granted') {
+      console.log('[NOTIF] Requesting permissions...');
+      const { status } = await Notifications.requestPermissionsAsync();
+      console.log('[NOTIF] Permission result:', status);
+      finalStatus = status;
+    }
 
-  if (finalStatus !== 'granted') {
-    console.log('Failed to get push token for push notification!');
+    if (finalStatus !== 'granted') {
+      console.log('[NOTIF] ❌ Permission DENIED');
+      return false;
+    }
+
+    console.log('[NOTIF] ✅ Permission GRANTED');
+    return true;
+  } catch (error) {
+    console.error('[NOTIF] ❌ Error requesting permissions:', error);
     return false;
   }
-
-  return true;
 }
 
 // Send local notification
@@ -44,13 +62,21 @@ export async function sendLocalNotification(
   data?: any
 ) {
   try {
+    console.log('[NOTIF] ========== SENDING NOTIFICATION ==========');
+    console.log('[NOTIF] Title:', title);
+    console.log('[NOTIF] Body:', body);
+    console.log('[NOTIF] Data:', data);
+    
     const hasPermission = await requestNotificationPermissions();
+    console.log('[NOTIF] Has permission:', hasPermission);
+    
     if (!hasPermission) {
-      console.log('No notification permission');
+      console.log('[NOTIF] ❌ No notification permission, aborting');
       return;
     }
 
-    await Notifications.scheduleNotificationAsync({
+    console.log('[NOTIF] Scheduling notification...');
+    const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title,
         body,
@@ -61,9 +87,11 @@ export async function sendLocalNotification(
       trigger: null, // Send immediately
     });
 
-    console.log('Notification sent successfully');
+    console.log('[NOTIF] ✅ Notification scheduled successfully! ID:', identifier);
+    return identifier;
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('[NOTIF] ❌ Error sending notification:', error);
+    console.error('[NOTIF] Error details:', JSON.stringify(error, null, 2));
   }
 }
 
