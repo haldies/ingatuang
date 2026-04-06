@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,19 @@ import {
   TextInput,
   ScrollView,
   Pressable,
+  Animated,
+  Easing,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import {
-  addTransaction,
-  updateTransaction,
-  getCategories,
+  storage,
   type Transaction,
   type Category,
-} from '@/lib/storage';
+  type Wallet,
+} from '@/lib/storage/storage-adapter';
 
 interface AddTransactionModalProps {
   visible: boolean;
@@ -34,11 +36,15 @@ export function AddTransactionModal({
 }: AddTransactionModalProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showWalletPicker, setShowWalletPicker] = useState(false);
+  const slideAnim = useRef(new Animated.Value(1)).current;
   const [formData, setFormData] = useState({
     type: 'EXPENSE' as 'EXPENSE' | 'INCOME',
     categoryId: '',
+    walletId: 'default',
     amount: '',
     date: new Date(),
     notes: '',
@@ -46,12 +52,38 @@ export function AddTransactionModal({
 
   // Load categories
   useEffect(() => {
-    const loadCategories = async () => {
-      const cats = await getCategories();
+    const loadData = async () => {
+      const [cats, walls, selectedId] = await Promise.all([
+        storage.getCategories(),
+        storage.getWallets(),
+        storage.getSelectedWalletId()
+      ]);
       setCategories(cats);
+      setWallets(walls);
+      
+      if (!transaction) {
+        setFormData(prev => ({ ...prev, walletId: selectedId }));
+      }
     };
     if (visible) {
-      loadCategories();
+      loadData();
+      // Reset and animate in
+      slideAnim.setValue(1);
+      
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // iOS-like easing curve
+      }).start();
+    } else {
+      // Animate out
+      Animated.timing(slideAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      }).start();
     }
   }, [visible]);
 
@@ -61,15 +93,17 @@ export function AddTransactionModal({
       setFormData({
         type: transaction.type,
         categoryId: transaction.categoryId,
+        walletId: transaction.walletId || 'default',
         amount: transaction.amount.toString(),
         date: new Date(transaction.date),
         notes: transaction.notes || '',
       });
     } else if (!transaction && visible) {
-      // Reset form
+      // Reset form (wallet handles separately in loadData)
       setFormData({
         type: 'EXPENSE',
         categoryId: '',
+        walletId: 'default',
         amount: '',
         date: new Date(),
         notes: '',
@@ -88,28 +122,30 @@ export function AddTransactionModal({
     try {
       if (transaction) {
         // Update
-        await updateTransaction(transaction.id, {
+        await storage.updateTransaction(transaction.id, {
           type: formData.type,
           categoryId: formData.categoryId,
+          walletId: formData.walletId,
           amount: parseFloat(formData.amount),
           date: formData.date.toISOString(),
           notes: formData.notes || undefined,
         });
       } else {
         // Create
-        await addTransaction({
+        await storage.addTransaction({
           type: formData.type,
           categoryId: formData.categoryId,
+          walletId: formData.walletId,
           amount: parseFloat(formData.amount),
           date: formData.date.toISOString(),
           notes: formData.notes || undefined,
         });
       }
 
-      // Reset form
       setFormData({
         type: 'EXPENSE',
         categoryId: '',
+        walletId: 'default',
         amount: '',
         date: new Date(),
         notes: '',
@@ -156,12 +192,23 @@ export function AddTransactionModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       transparent={false}
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <Animated.View 
+        style={{
+          flex: 1,
+          transform: [{
+            translateY: slideAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1000],
+            }),
+          }],
+        }}
+      >
+        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
           <TouchableOpacity onPress={onClose} className="p-1 w-10">
@@ -214,23 +261,44 @@ export function AddTransactionModal({
             </View>
           </View>
 
-          {/* Category */}
-          <View className="mb-5">
-            <Text className="text-sm font-semibold text-gray-900 mb-2.5">Kategori</Text>
-            <TouchableOpacity
-              className="flex-row items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
-              onPress={() => setShowCategoryPicker(true)}
-            >
-              {selectedCategory ? (
-                <>
-                  <Text className="text-xl">{selectedCategory.icon}</Text>
-                  <Text className="flex-1 text-[15px] text-gray-900">{selectedCategory.name}</Text>
-                </>
-              ) : (
-                <Text className="flex-1 text-[15px] text-gray-400">Pilih kategori</Text>
-              )}
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
-            </TouchableOpacity>
+          <View className="mb-5 flex-row gap-3">
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-gray-900 mb-2.5">Kategori</Text>
+              <TouchableOpacity
+                className="flex-row items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
+                onPress={() => setShowCategoryPicker(true)}
+              >
+                {selectedCategory ? (
+                  <>
+                    <Text className="text-xl">{selectedCategory.icon}</Text>
+                    <Text className="flex-1 text-[15px] text-gray-900" numberOfLines={1}>{selectedCategory.name}</Text>
+                  </>
+                ) : (
+                  <Text className="flex-1 text-[15px] text-gray-400">Pilih</Text>
+                )}
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-1">
+              <Text className="text-sm font-semibold text-gray-900 mb-2.5">Dompet</Text>
+              <TouchableOpacity
+                className="flex-row items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
+                onPress={() => setShowWalletPicker(true)}
+              >
+                {wallets.find(w => w.id === formData.walletId) ? (
+                  <>
+                    <Ionicons name={wallets.find(w => w.id === formData.walletId)?.icon as any || 'wallet'} size={18} color="#374151" />
+                    <Text className="flex-1 text-[15px] text-gray-900" numberOfLines={1}>
+                      {wallets.find(w => w.id === formData.walletId)?.name}
+                    </Text>
+                  </>
+                ) : (
+                  <Text className="flex-1 text-[15px] text-gray-400">Pilih</Text>
+                )}
+                <Ionicons name="chevron-down" size={16} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Amount & Date */}
@@ -293,98 +361,144 @@ export function AddTransactionModal({
         </View>
       </SafeAreaView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/50 justify-end"
-          onPress={() => setShowCalendar(false)}
-        >
-          <Pressable className="bg-white rounded-t-[20px] p-5 pb-10" onPress={(e) => e.stopPropagation()}>
-            <View className="flex-row items-center justify-between mb-5">
-              <Text className="text-xl font-bold text-gray-900">Pilih Tanggal</Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons name="close" size={28} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [formData.date.toISOString().split('T')[0]]: {
-                  selected: true,
-                  selectedColor: '#3b82f6',
-                },
-              }}
-              theme={{
-                todayTextColor: '#3b82f6',
-                selectedDayBackgroundColor: '#3b82f6',
-                selectedDayTextColor: '#ffffff',
-                arrowColor: '#3b82f6',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-                textMonthFontWeight: '600',
-              }}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Category Picker Modal */}
-      <Modal
-        visible={showCategoryPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCategoryPicker(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/50 justify-end"
-          onPress={() => setShowCategoryPicker(false)}
-        >
-          <Pressable className="bg-white rounded-t-[20px] max-h-[70%]" onPress={(e) => e.stopPropagation()}>
-            <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
-              <Text className="text-xl font-bold text-gray-900">Pilih Kategori</Text>
-              <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
-                <Ionicons name="close" size={28} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView 
-              className="px-5 py-3"
-              contentContainerStyle={{ paddingBottom: 40 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {filteredCategories.map((cat) => (
-                <TouchableOpacity
-                  key={cat.id}
-                  className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
-                    formData.categoryId === cat.id 
-                      ? 'bg-blue-50 border border-blue-500' 
-                      : 'bg-gray-50'
-                  }`}
-                  onPress={() => handleCategorySelect(cat.id)}
-                >
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View 
-                      className="w-10 h-10 rounded-full items-center justify-center"
-                      style={{ backgroundColor: cat.color + '20' }}
-                    >
-                      <Text className="text-xl">{cat.icon}</Text>
-                    </View>
-                    <Text className="text-base font-medium text-gray-900">{cat.name}</Text>
-                  </View>
-                  {formData.categoryId === cat.id && (
-                    <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
-                  )}
+      {/* Calendar Overlay */}
+      {showCalendar && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Pressable
+            className="flex-1 bg-black/50 justify-end"
+            onPress={() => setShowCalendar(false)}
+          >
+            <Pressable className="bg-white rounded-t-[20px] p-5 pb-10" onPress={(e) => e.stopPropagation()}>
+              <View className="flex-row items-center justify-between mb-5">
+                <Text className="text-xl font-bold text-gray-900">Pilih Tanggal</Text>
+                <TouchableOpacity onPress={() => setShowCalendar(false)}>
+                  <Ionicons name="close" size={28} color="#6b7280" />
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              </View>
+              <Calendar
+                onDayPress={handleDateSelect}
+                markedDates={{
+                  [formData.date.toISOString().split('T')[0]]: {
+                    selected: true,
+                    selectedColor: '#3b82f6',
+                  },
+                }}
+                theme={{
+                  todayTextColor: '#3b82f6',
+                  selectedDayBackgroundColor: '#3b82f6',
+                  selectedDayTextColor: '#ffffff',
+                  arrowColor: '#3b82f6',
+                  textDayFontSize: 16,
+                  textMonthFontSize: 18,
+                  textDayHeaderFontSize: 14,
+                  textMonthFontWeight: '600',
+                }}
+              />
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      )}
+
+      {/* Wallet Picker Overlay */}
+      {showWalletPicker && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Pressable
+            className="flex-1 bg-black/50 justify-end"
+            onPress={() => setShowWalletPicker(false)}
+          >
+            <Pressable className="bg-white rounded-t-[20px] max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+              <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
+                <Text className="text-xl font-bold text-gray-900">Pilih Dompet</Text>
+                <TouchableOpacity onPress={() => setShowWalletPicker(false)}>
+                  <Ionicons name="close" size={28} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView 
+                className="px-5 py-3"
+                contentContainerStyle={{ paddingBottom: 40 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {wallets.map((wallet) => (
+                  <TouchableOpacity
+                    key={wallet.id}
+                    className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
+                      formData.walletId === wallet.id 
+                        ? 'bg-blue-50 border border-blue-500' 
+                        : 'bg-gray-50'
+                    }`}
+                    onPress={() => {
+                      setFormData({ ...formData, walletId: wallet.id });
+                      setShowWalletPicker(false);
+                    }}
+                  >
+                    <View className="flex-row items-center gap-3 flex-1">
+                      <View 
+                        className="w-10 h-10 rounded-full items-center justify-center bg-gray-200"
+                      >
+                        <Ionicons name={wallet.icon as any} size={20} color={wallet.color} />
+                      </View>
+                      <Text className="text-base font-medium text-gray-900">{wallet.name}</Text>
+                    </View>
+                    {formData.walletId === wallet.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Category Picker Overlay */}
+      {showCategoryPicker && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Pressable
+            className="flex-1 bg-black/50 justify-end"
+            onPress={() => setShowCategoryPicker(false)}
+          >
+            <Pressable className="bg-white rounded-t-[20px] max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+              <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
+                <Text className="text-xl font-bold text-gray-900">Pilih Kategori</Text>
+                <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>
+                  <Ionicons name="close" size={28} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView 
+                className="px-5 py-3"
+                contentContainerStyle={{ paddingBottom: 40 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {filteredCategories.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
+                      formData.categoryId === cat.id 
+                        ? 'bg-blue-50 border border-blue-500' 
+                        : 'bg-gray-50'
+                    }`}
+                    onPress={() => handleCategorySelect(cat.id)}
+                  >
+                    <View className="flex-row items-center gap-3 flex-1">
+                      <View 
+                        className="w-10 h-10 rounded-full items-center justify-center"
+                        style={{ backgroundColor: cat.color + '20' }}
+                      >
+                        <Text className="text-xl">{cat.icon}</Text>
+                      </View>
+                      <Text className="text-base font-medium text-gray-900">{cat.name}</Text>
+                    </View>
+                    {formData.categoryId === cat.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </View>
+      )}
+      </Animated.View>
     </Modal>
   );
 }

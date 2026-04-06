@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { formatCurrency } from '@/lib/format';
-import type { SubscriptionStats } from '@/lib/storage';
+import { formatCurrency } from '@/lib/utils/format';
+import type { SubscriptionStats } from '@/lib/storage/storage-adapter';
 
 interface SubscriptionStatsProps {
   stats: SubscriptionStats;
@@ -26,11 +26,15 @@ export function SubscriptionStatsComponent({ stats }: SubscriptionStatsProps) {
       <View style={styles.secondaryRow}>
         <View style={styles.secondaryStat}>
           <Text style={styles.secondaryValue}>{stats.totalActive}</Text>
-          <Text style={styles.secondaryLabel}>Aktif</Text>
+          <View style={styles.secondaryTextContainer}>
+            <Text style={styles.secondaryLabel}>Total Aktif</Text>
+          </View>
         </View>
         <View style={styles.secondaryStat}>
-          <Text style={styles.secondaryValue}>{stats.upcomingRenewals}</Text>
-          <Text style={styles.secondaryLabel}>Perpanjang 7 Hari</Text>
+          <Text style={[styles.secondaryValue, { color: '#f59e0b' }]}>{stats.upcomingRenewals}</Text>
+          <View style={styles.secondaryTextContainer}>
+            <Text style={styles.secondaryLabel}>Akan Datang</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -40,61 +44,70 @@ export function SubscriptionStatsComponent({ stats }: SubscriptionStatsProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    borderRadius: 24,
+    padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
   mainRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 16,
   },
   mainStat: {
     flex: 1,
-    alignItems: 'center',
   },
   mainLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 4,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   mainValue: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
     color: '#111827',
+    letterSpacing: -0.5,
   },
   divider: {
     width: 1,
-    height: 32,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 16,
+    backgroundColor: '#f3f4f6',
   },
   secondaryRow: {
     flexDirection: 'row',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    padding: 12,
     gap: 12,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
   secondaryStat: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 16,
+    gap: 10,
+  },
+  secondaryTextContainer: {
+    flex: 1,
   },
   secondaryValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#3b82f6',
-    marginBottom: 2,
   },
   secondaryLabel: {
     fontSize: 10,
     color: '#6b7280',
-    fontWeight: '500',
-    textAlign: 'center',
+    fontWeight: '600',
   },
 });

@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency } from '@/lib/utils/format';
 
 interface SummaryCardProps {
   title: string;

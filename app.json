@@ -15,14 +15,17 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.ingatuang"
+      "bundleIdentifier": "com.ingatuang.money",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "package": "com.anonymous.ingatuang",
+      "package": "com.ingatuang.money",
       "permissions": [
         "POST_NOTIFICATIONS"
       ]
@@ -49,10 +52,17 @@
           "icon": "./assets/images/icon.png",
           "color": "#3b82f6"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4e182d18-b6a4-4662-b156-817c89296504"
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { formatCurrency, formatDate } from '@/lib/format';
+import { formatCurrency, formatDate } from '@/lib/utils/format';
 
 interface TransactionWithCategory {
   id: string;

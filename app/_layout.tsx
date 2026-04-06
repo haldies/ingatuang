@@ -16,12 +16,24 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
+    // Initialize Internationalization & Currency
+    const loadConfig = async () => {
+      const { initI18n } = require('@/lib/utils/i18n');
+      const { storage } = require('@/lib/storage/storage-adapter');
+      const { updateGlobalCurrency } = require('@/lib/utils/format');
+      
+      await initI18n();
+      const currency = await storage.getCurrency();
+      updateGlobalCurrency(currency);
+    };
+    loadConfig();
+
     // Set API config for widget
     const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
     const apiKey = process.env.EXPO_PUBLIC_API_KEY || '';
     
     if (apiUrl && apiKey) {
-      const { setWidgetAPIConfig } = require('@/lib/widget');
+      const { setWidgetAPIConfig } = require('@/lib/utils/widget');
       setWidgetAPIConfig(apiUrl, apiKey);
     }
   }, []);
@@ -29,15 +41,22 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="account" options={{ headerShown: false }} />
-          <Stack.Screen name="api-keys/index" options={{ headerShown: false }} />
-          <Stack.Screen name="api-keys/create" options={{ headerShown: false }} />
-          <Stack.Screen name="export" options={{ headerShown: false }} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'none',
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen 
+            name="modal" 
+            options={{ 
+              presentation: 'modal',
+              title: 'Modal',
+              animation: 'none',
+            }} 
+          />
+          <Stack.Screen name="export" />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

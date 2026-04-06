@@ -7,12 +7,17 @@ import {
   TextInput,
   ScrollView,
   Pressable,
+  Animated,
+  Easing,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
-import { addSubscription, updateSubscription, type Subscription } from '@/lib/storage';
-import { eventEmitter, EVENTS } from '@/lib/events';
+import { storage, type Subscription } from '@/lib/storage/storage-adapter';
+import { eventEmitter, EVENTS } from '@/lib/utils/events';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 
 interface AddSubscriptionModalProps {
   visible: boolean;
@@ -20,6 +25,19 @@ interface AddSubscriptionModalProps {
   subscription?: Subscription | null;
   onSuccess?: () => void;
 }
+
+const PRESET_BRANDS = [
+  { name: 'Netflix', icon: 'tv', color: '#E50914', defaultPrice: '186000' },
+  { name: 'Spotify', icon: 'musical-notes', color: '#1DB954', defaultPrice: '54990' },
+  { name: 'YouTube', icon: 'logo-youtube', color: '#FF0000', defaultPrice: '59000' },
+  { name: 'Apple Music', icon: 'logo-apple', color: '#000000', defaultPrice: '55000' },
+  { name: 'Disney+', icon: 'videocam', color: '#113CCF', defaultPrice: '39000' },
+  { name: 'iCloud', icon: 'cloud', color: '#007AFF', defaultPrice: '15000' },
+  { name: 'Shopee VIP', icon: 'cart', color: '#EE4D2D', defaultPrice: '10000' },
+  { name: 'Tokopedia', icon: 'basket', color: '#42B549', defaultPrice: '10000' },
+  { name: 'Google One', icon: 'logo-google', color: '#4285F4', defaultPrice: '26900' },
+  { name: 'Prime Video', icon: 'play-circle', color: '#00A8E1', defaultPrice: '59000' },
+];
 
 export function AddSubscriptionModal({
   visible,
@@ -36,6 +54,10 @@ export function AddSubscriptionModal({
     billingCycle: 'MONTHLY' as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY',
     startDate: new Date(),
     description: '',
+    icon: 'calendar-outline',
+    color: '#3b82f6',
+    imageUri: '',
+    iconType: 'icon' as 'icon' | 'image',
   });
 
   useEffect(() => {
@@ -46,6 +68,10 @@ export function AddSubscriptionModal({
         billingCycle: subscription.billingCycle,
         startDate: new Date(subscription.startDate),
         description: subscription.description || '',
+        icon: subscription.icon || 'calendar-outline',
+        color: subscription.color || '#3b82f6',
+        imageUri: subscription.imageUri || '',
+        iconType: subscription.iconType || 'icon',
       });
     } else if (!subscription && visible) {
       setFormData({
@@ -54,6 +80,10 @@ export function AddSubscriptionModal({
         billingCycle: 'MONTHLY',
         startDate: new Date(),
         description: '',
+        icon: 'calendar-outline',
+        color: '#3b82f6',
+        imageUri: '',
+        iconType: 'icon',
       });
     }
   }, [subscription, visible]);
@@ -68,20 +98,28 @@ export function AddSubscriptionModal({
 
     try {
       if (subscription) {
-        await updateSubscription(subscription.id, {
+        await storage.updateSubscription(subscription.id, {
           name: formData.name,
           amount: parseFloat(formData.amount),
           billingCycle: formData.billingCycle,
           startDate: formData.startDate.toISOString(),
           description: formData.description || undefined,
+          icon: formData.icon,
+          color: formData.color,
+          imageUri: formData.imageUri || undefined,
+          iconType: formData.iconType,
         });
       } else {
-        await addSubscription({
+        await storage.addSubscription({
           name: formData.name,
           amount: parseFloat(formData.amount),
           billingCycle: formData.billingCycle,
           startDate: formData.startDate.toISOString(),
           description: formData.description || undefined,
+          icon: formData.icon,
+          color: formData.color,
+          imageUri: formData.imageUri || undefined,
+          iconType: formData.iconType,
         });
       }
 
@@ -91,6 +129,10 @@ export function AddSubscriptionModal({
         billingCycle: 'MONTHLY',
         startDate: new Date(),
         description: '',
+        icon: 'calendar-outline',
+        color: '#3b82f6',
+        imageUri: '',
+        iconType: 'icon',
       });
 
       // Emit event to refresh transactions if new subscription was added
@@ -136,6 +178,24 @@ export function AddSubscriptionModal({
     { value: 'YEARLY', label: 'Tahunan', icon: 'calendar-sharp' },
   ];
 
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setFormData({
+        ...formData,
+        imageUri: result.assets[0].uri,
+        iconType: 'image',
+        icon: '', // Clear icon if image is picked
+      });
+    }
+  };
+
   const selectedBillingCycle = billingCycles.find(c => c.value === formData.billingCycle);
 
   return (
@@ -159,6 +219,64 @@ export function AddSubscriptionModal({
         </View>
 
         <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+          {/* Icon/Image Preview */}
+          <View className="items-center mb-8">
+            <TouchableOpacity onPress={handlePickImage}>
+              {formData.iconType === 'image' && formData.imageUri ? (
+                <View className="w-24 h-24 rounded-3xl overflow-hidden shadow-lg border-2 border-white">
+                  <Image source={{ uri: formData.imageUri }} style={{ width: 96, height: 96 }} />
+                </View>
+              ) : (
+                <View 
+                  className="w-24 h-24 rounded-3xl items-center justify-center shadow-lg border-2 border-white"
+                  style={{ backgroundColor: formData.color }}
+                >
+                  <Ionicons name={formData.icon as any} size={48} color="#fff" />
+                </View>
+              )}
+              <View className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500 rounded-full items-center justify-center border-4 border-white shadow-sm">
+                <Ionicons name="camera" size={18} color="#fff" />
+              </View>
+            </TouchableOpacity>
+            <Text className="text-xs font-medium text-gray-400 mt-4">Ketuk untuk ubah gambar</Text>
+          </View>
+
+          {/* Brand Grid Selector */}
+          {!subscription && (
+             <View className="mb-6">
+                <Text className="text-sm font-semibold text-gray-900 mb-4">Mulai Cepat dengan Brand</Text>
+                <View className="flex-row flex-wrap justify-between gap-y-4">
+                   {PRESET_BRANDS.map((brand) => (
+                      <TouchableOpacity
+                         key={brand.name}
+                         onPress={() => setFormData({
+                            ...formData,
+                            name: brand.name,
+                            icon: brand.icon,
+                            color: brand.color,
+                            amount: brand.defaultPrice,
+                            iconType: 'icon',
+                            imageUri: '' // Clear image if brand is picked
+                         })}
+                         style={{ width: '18%' }}
+                         className="items-center"
+                      >
+                         <View 
+                            className="w-12 h-12 rounded-xl items-center justify-center mb-1 shadow-sm"
+                            style={{ backgroundColor: brand.color }}
+                         >
+                            <Ionicons name={brand.icon as any} size={24} color="#fff" />
+                         </View>
+                         <Text className="text-[10px] font-medium text-gray-500 text-center" numberOfLines={1}>
+                            {brand.name}
+                         </Text>
+                      </TouchableOpacity>
+                   ))}
+                   {/* Custom Icon Placeholder or Picker if needed */}
+                </View>
+             </View>
+          )}
+
           {/* Name */}
           <View className="mb-5">
             <Text className="text-sm font-semibold text-gray-900 mb-2.5">Nama Langganan</Text>
@@ -246,95 +364,89 @@ export function AddSubscriptionModal({
         </View>
       </SafeAreaView>
 
-      {/* Calendar Modal */}
-      <Modal
-        visible={showCalendar}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowCalendar(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/50 justify-end"
-          onPress={() => setShowCalendar(false)}
-        >
-          <Pressable className="bg-white rounded-t-[20px] p-5 pb-10" onPress={(e) => e.stopPropagation()}>
-            <View className="flex-row items-center justify-between mb-5">
-              <Text className="text-xl font-bold text-gray-900">Pilih Tanggal</Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons name="close" size={28} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-            <Calendar
-              onDayPress={handleDateSelect}
-              markedDates={{
-                [formData.startDate.toISOString().split('T')[0]]: {
-                  selected: true,
-                  selectedColor: '#3b82f6',
-                },
-              }}
-              theme={{
-                todayTextColor: '#3b82f6',
-                selectedDayBackgroundColor: '#3b82f6',
-                selectedDayTextColor: '#ffffff',
-                arrowColor: '#3b82f6',
-                textDayFontSize: 16,
-                textMonthFontSize: 18,
-                textDayHeaderFontSize: 14,
-                textMonthFontWeight: '600',
-              }}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Billing Cycle Picker Modal */}
-      <Modal
-        visible={showBillingCyclePicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowBillingCyclePicker(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/50 justify-end"
-          onPress={() => setShowBillingCyclePicker(false)}
-        >
-          <Pressable className="bg-white rounded-t-[20px]" onPress={(e) => e.stopPropagation()}>
-            <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
-              <Text className="text-xl font-bold text-gray-900">Pilih Siklus Pembayaran</Text>
-              <TouchableOpacity onPress={() => setShowBillingCyclePicker(false)}>
-                <Ionicons name="close" size={28} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView 
-              className="px-5 py-3"
-              contentContainerStyle={{ paddingBottom: 40 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {billingCycles.map((cycle) => (
-                <TouchableOpacity
-                  key={cycle.value}
-                  className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
-                    formData.billingCycle === cycle.value 
-                      ? 'bg-blue-50 border border-blue-500' 
-                      : 'bg-gray-50'
-                  }`}
-                  onPress={() => handleBillingCycleSelect(cycle.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')}
-                >
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-10 h-10 rounded-full items-center justify-center bg-blue-100">
-                      <Ionicons name={cycle.icon as any} size={20} color="#3b82f6" />
-                    </View>
-                    <Text className="text-base font-medium text-gray-900">{cycle.label}</Text>
-                  </View>
-                  {formData.billingCycle === cycle.value && (
-                    <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
-                  )}
+      {/* Calendar Overlay */}
+      {showCalendar && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Pressable
+            className="flex-1 bg-black/50 justify-end"
+            onPress={() => setShowCalendar(false)}
+          >
+            <Pressable className="bg-white rounded-t-[20px] p-5 pb-10" onPress={(e) => e.stopPropagation()}>
+              <View className="flex-row items-center justify-between mb-5">
+                <Text className="text-xl font-bold text-gray-900">Pilih Tanggal</Text>
+                <TouchableOpacity onPress={() => setShowCalendar(false)}>
+                  <Ionicons name="close" size={28} color="#6b7280" />
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              </View>
+              <Calendar
+                onDayPress={handleDateSelect}
+                markedDates={{
+                  [formData.startDate.toISOString().split('T')[0]]: {
+                    selected: true,
+                    selectedColor: '#3b82f6',
+                  },
+                }}
+                theme={{
+                  todayTextColor: '#3b82f6',
+                  selectedDayBackgroundColor: '#3b82f6',
+                  selectedDayTextColor: '#ffffff',
+                  arrowColor: '#3b82f6',
+                  textDayFontSize: 16,
+                  textMonthFontSize: 18,
+                  textDayHeaderFontSize: 14,
+                  textMonthFontWeight: '600',
+                }}
+              />
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </View>
+      )}
+
+      {/* Billing Cycle Picker Overlay */}
+      {showBillingCyclePicker && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Pressable
+            className="flex-1 bg-black/50 justify-end"
+            onPress={() => setShowBillingCyclePicker(false)}
+          >
+            <Pressable className="bg-white rounded-t-[20px]" onPress={(e) => e.stopPropagation()}>
+              <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
+                <Text className="text-xl font-bold text-gray-900">Pilih Siklus Pembayaran</Text>
+                <TouchableOpacity onPress={() => setShowBillingCyclePicker(false)}>
+                  <Ionicons name="close" size={28} color="#6b7280" />
+                </TouchableOpacity>
+              </View>
+              <ScrollView 
+                className="px-5 py-3"
+                contentContainerStyle={{ paddingBottom: 40 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {billingCycles.map((cycle) => (
+                  <TouchableOpacity
+                    key={cycle.value}
+                    className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
+                      formData.billingCycle === cycle.value 
+                        ? 'bg-blue-50 border border-blue-500' 
+                        : 'bg-gray-50'
+                    }`}
+                    onPress={() => handleBillingCycleSelect(cycle.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')}
+                  >
+                    <View className="flex-row items-center gap-3 flex-1">
+                      <View className="w-10 h-10 rounded-full items-center justify-center bg-blue-100">
+                        <Ionicons name={cycle.icon as any} size={20} color="#3b82f6" />
+                      </View>
+                      <Text className="text-base font-medium text-gray-900">{cycle.label}</Text>
+                    </View>
+                    {formData.billingCycle === cycle.value && (
+                      <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </View>
+      )}
     </Modal>
   );
 }

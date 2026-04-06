@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -16,8 +16,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { parseTransactionText } from '@/lib/ai-parser';
-import { addTransaction, getCategories } from '@/lib/storage';
+import { Colors } from '@/constants/theme';
+import { parseTransactionText } from '@/lib/ai/ai-parser';
+import { storage } from '@/lib/storage/storage-adapter';
+import { AIConsentDialog } from './ai-consent-dialog';
+import { hasShownAIConsent, saveAIConsent } from '@/lib/ai/ai-consent';
+import { CustomAlert } from '../ui/custom-alert';
 
 interface QuickAddModalProps {
   visible: boolean;
@@ -29,6 +33,36 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
   const [text, setText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info'
+  });
+
+  // Check if we need to show consent dialog
+  useEffect(() => {
+    const checkConsent = async () => {
+      if (visible) {
+        const hasShown = await hasShownAIConsent();
+        if (!hasShown) {
+          setShowConsentDialog(true);
+        }
+      }
+    };
+    checkConsent();
+  }, [visible]);
+
+  const handleConsentAccept = async () => {
+    await saveAIConsent(true);
+    setShowConsentDialog(false);
+  };
+
+  const handleConsentDecline = async () => {
+    await saveAIConsent(false);
+    setShowConsentDialog(false);
+  };
 
   const handleSubmit = async () => {
     if (!text.trim()) {
@@ -60,7 +94,7 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
 
       // Get categories to map categoryId
       console.log('📂 [QuickAdd] Fetching categories...');
-      const categories = await getCategories();
+      const categories = await storage.getCategories();
       console.log('📂 [QuickAdd] Available categories:', categories.length);
       
       const category = categories.find(c => 
@@ -76,39 +110,41 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
       
       console.log('🏷️ [QuickAdd] Final category ID:', finalCategoryId);
 
+      // Get selected wallet
+      const selectedWalletId = await storage.getSelectedWalletId();
+      const finalWalletId = selectedWalletId === 'all' ? 'default' : selectedWalletId;
+      console.log('👛 [QuickAdd] Use wallet ID:', finalWalletId);
+
       // Prepare transaction data
       const transactionData = {
         amount: parsed.amount,
         type: parsed.type,
         date: new Date().toISOString(),
         categoryId: finalCategoryId,
+        walletId: finalWalletId,
         notes: parsed.notes,
       };
       console.log('💾 [QuickAdd] Transaction data to save:', JSON.stringify(transactionData, null, 2));
 
       // Save to local storage
       console.log('💾 [QuickAdd] Saving to AsyncStorage...');
-      const savedTransaction = await addTransaction(transactionData);
+      const savedTransaction = await storage.addTransaction(transactionData);
       console.log('✅ [QuickAdd] Transaction saved successfully!');
       console.log('✅ [QuickAdd] Saved transaction:', JSON.stringify(savedTransaction, null, 2));
 
       // Show success message
-      Alert.alert(
-        'Berhasil!',
-        `${parsed.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'} Rp ${parsed.amount.toLocaleString('id-ID')} berhasil ditambahkan`,
-        [{ text: 'OK' }]
-      );
+      setAlertConfig({
+        visible: true,
+        title: 'Transaksi Berhasil',
+        message: `${parsed.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran'} senilai Rp ${parsed.amount.toLocaleString('id-ID')} telah ditambahkan`,
+        type: 'success'
+      });
 
       console.log('🎉 [QuickAdd] Process completed successfully!');
       setText('');
-      onClose();
-      if (onSuccess) {
-        console.log('🔄 [QuickAdd] Calling onSuccess callback...');
-        onSuccess();
-      }
+      // onClose will be called from the alert's button or handleClose
     } catch (err) {
       console.error('❌ [QuickAdd] Error adding transaction:', err);
-      console.error('❌ [QuickAdd] Error details:', JSON.stringify(err, null, 2));
       setError('Terjadi kesalahan saat menyimpan transaksi');
     } finally {
       setIsProcessing(false);
@@ -126,13 +162,33 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={handleClose}
-      statusBarTranslucent
-    >
+    <>
+      <AIConsentDialog
+        visible={showConsentDialog}
+        onAccept={handleConsentAccept}
+        onDecline={handleConsentDecline}
+      />
+      
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        onClose={() => {
+          setAlertConfig(prev => ({ ...prev, visible: false }));
+          if (alertConfig.type === 'success') {
+            onClose();
+            if (onSuccess) onSuccess();
+          }
+        }}
+      />
+      <Modal
+        visible={visible && !showConsentDialog}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={handleClose}
+        statusBarTranslucent
+      >
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -175,7 +231,7 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
                 onSubmitEditing={Keyboard.dismiss}
               />
               <Text style={styles.hint}>
-                💡 Tips: Tulis nominal dan deskripsi, contoh "Makan siang 50rb" atau "Gaji 5 juta"
+                Tulis nominal dan deskripsi, contoh "Makan siang 50rb" atau "Gaji 5 juta"
               </Text>
             </View>
 
@@ -212,16 +268,14 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
                   <Text style={styles.submitButtonText}>Memproses...</Text>
                 </>
               ) : (
-                <>
-                  <Ionicons name="add-circle" size={20} color="#fff" />
-                  <Text style={styles.submitButtonText}>Tambah Transaksi</Text>
-                </>
+                <Text style={styles.submitButtonText}>Tambah Transaksi</Text>
               )}
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
+    </>
   );
 }
 
@@ -287,17 +341,20 @@ const styles = StyleSheet.create({
   errorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#fef2f2',
+    gap: 12,
+    backgroundColor: '#fff1f2',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginHorizontal: 20,
     marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#fecdd3',
   },
   errorText: {
     flex: 1,
     fontSize: 14,
-    color: '#ef4444',
+    color: '#e11d48',
+    fontWeight: '500',
     lineHeight: 20,
   },
   footer: {
@@ -332,7 +389,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 12,
-    backgroundColor: '#a855f7',
+    backgroundColor: Colors.light.tint,
   },
   submitButtonDisabled: {
     backgroundColor: '#d1d5db',

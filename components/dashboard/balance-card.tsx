@@ -1,53 +1,63 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { formatCurrency } from '@/lib/format';
-import type { DashboardStats } from '@/lib/storage';
+import { View, Text } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { formatCurrency } from '@/lib/utils/format';
+import type { DashboardStats } from '@/lib/storage/storage-adapter';
+import { useTranslation } from 'react-i18next';
 
 interface BalanceCardProps {
   stats: DashboardStats;
 }
 
 export function BalanceCard({ stats }: BalanceCardProps) {
+  const { t } = useTranslation();
+  
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
+    <View className="mx-4 my-4">
+      <View className="bg-white rounded-[24px] p-6 shadow-sm shadow-black/5 elevation-2">
         {/* Main Balance */}
-        <View style={styles.mainBalance}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceValue}>{formatCurrency(stats.balance)}</Text>
+        <View className="items-center mb-6">
+          <Text className="text-sm text-slate-500 font-medium mb-2 tracking-widest uppercase">
+            {t('dashboard.total_balance')}
+          </Text>
+          <Text className="text-[40px] font-extrabold text-slate-700 tracking-tighter">
+            {formatCurrency(stats.totalBalance)}
+          </Text>
+          
           {stats.balanceChange !== undefined && (
-            <View style={styles.changeContainer}>
-              <Text style={[
-                styles.changeText,
-                stats.balanceChange >= 0 ? styles.changePositive : styles.changeNegative
-              ]}>
+            <View className="flex-row items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl">
+              <Text className={`text-[13px] font-semibold ${stats.balanceChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {stats.balanceChange >= 0 ? '+' : ''}{stats.balanceChange.toFixed(1)}%
               </Text>
-              <Text style={styles.changeLabel}>vs bulan lalu</Text>
+              <Text className="text-xs text-slate-500">{t('dashboard.vs_last_month')}</Text>
             </View>
           )}
         </View>
 
         {/* Income & Expense Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <View style={[styles.statIconContainer, styles.incomeIcon]}>
-              <Text style={[styles.statIcon, { color: '#10b981' }]}>↓</Text>
+        <View className="flex-row items-center bg-slate-50 rounded-2xl p-3">
+          <View className="flex-1 flex-row items-center gap-2">
+            <View className="w-8 h-8 items-center justify-center">
+              <Feather name="arrow-down-circle" size={20} color="#374151" />
             </View>
-            <View style={styles.statContent}>
-              <Text style={styles.statLabel}>Pemasukan</Text>
-              <Text style={styles.statValue}>{formatCurrency(stats.totalIncome)}</Text>
+            <View className="flex-1">
+              <Text className="text-[10px] text-slate-500 font-medium">{t('dashboard.income')}</Text>
+              <Text className="text-[13px] font-bold text-slate-700" numberOfLines={1}>
+                {formatCurrency(stats.totalIncome)}
+              </Text>
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View className="w-[1px] h-8 bg-slate-200 mx-3" />
 
-          <View style={styles.statItem}>
-            <View style={[styles.statIconContainer, styles.expenseIcon]}>
-              <Text style={[styles.statIcon, { color: '#ef4444' }]}>↑</Text>
+          <View className="flex-1 flex-row items-center gap-2">
+            <View className="w-8 h-8 items-center justify-center">
+              <Feather name="arrow-up-circle" size={20} color="#374151" />
             </View>
-            <View style={styles.statContent}>
-              <Text style={styles.statLabel}>Pengeluaran</Text>
-              <Text style={styles.statValue}>{formatCurrency(stats.totalExpense)}</Text>
+            <View className="flex-1">
+              <Text className="text-[10px] text-slate-500 font-medium">{t('dashboard.expense')}</Text>
+              <Text className="text-[13px] font-bold text-slate-700" numberOfLines={1}>
+                {formatCurrency(stats.totalExpense)}
+              </Text>
             </View>
           </View>
         </View>
@@ -56,110 +66,3 @@ export function BalanceCard({ stats }: BalanceCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginHorizontal: 16,
-    marginVertical: 16,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  mainBalance: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  balanceLabel: {
-    fontSize: 14,
-    color: '#6b7280',
-    fontWeight: '500',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  balanceValue: {
-    fontSize: 40,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 8,
-  },
-  changeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  changeText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  changePositive: {
-    color: '#10b981',
-  },
-  changeNegative: {
-    color: '#ef4444',
-  },
-  changeLabel: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: 16,
-    padding: 12,
-  },
-  statItem: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  incomeIcon: {
-    backgroundColor: '#d1fae5',
-  },
-  expenseIcon: {
-    backgroundColor: '#fee2e2',
-  },
-  statIcon: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  statContent: {
-    flex: 1,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#6b7280',
-    marginBottom: 2,
-    fontWeight: '500',
-  },
-  statValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  divider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 12,
-  },
-});

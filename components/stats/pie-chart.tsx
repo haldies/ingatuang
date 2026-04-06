@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, Pressable } from 'react-native';
 import Svg, { G, Path, Text as SvgText } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import type { CategoryStats } from '@/lib/storage';
-import { formatCurrency } from '@/lib/format';
+import type { CategoryStats } from '@/lib/storage/storage-adapter';
+import { formatCurrency } from '@/lib/utils/format';
 
 interface PieChartProps {
   data: CategoryStats[];
