@@ -1,0 +1,186 @@
+{
+  "income_rules": [
+    {
+      "categoryId": "1",
+      "priority": 100,
+      "keywords": ["gaji", "salary", "upah", "wage"]
+    },
+    {
+      "categoryId": "2",
+      "priority": 100,
+      "keywords": ["bonus", "thr", "insentif", "incentive", "komisi", "commission"]
+    },
+    {
+      "categoryId": "3",
+      "priority": 100,
+      "keywords": ["investasi", "saham", "dividen", "dividend", "bunga", "interest", "deposito", "reksadana", "mutual fund", "profit", "capital gain"]
+    },
+    {
+      "categoryId": "4",
+      "priority": 50,
+      "keywords": ["freelance", "project", "jasa", "service", "fee", "honor", "konsultan", "consultant"]
+    }
+  ],
+  "expense_rules": [
+    {
+      "categoryId": "9",
+      "priority": 100,
+      "name": "Tagihan",
+      "keywords": [
+        "tagihan", "bill", "listrik", "pln", "token listrik", "air", "pdam", "pam",
+        "internet", "wifi", "indihome", "first media", "firstmedia", "biznet", "myrepublic",
+        "pulsa", "paket data", "telepon", "telkom", "xl", "telkomsel", "indosat", "tri",
+        "smartfren", "axis", "by.u", "byu",
+        "cicilan", "kredit", "pinjaman", "kpr", "leasing", "asuransi", "insurance",
+        "bpjs", "premi", "premium", "angsuran"
+      ]
+    },
+    {
+      "categoryId": "10",
+      "priority": 100,
+      "name": "Kesehatan",
+      "keywords": [
+        "kesehatan", "health", "dokter", "doctor", "dr.", "rumah sakit", "rs ", "hospital",
+        "klinik", "clinic", "puskesmas", "posyandu",
+        "obat", "medicine", "vitamin", "apotek", "pharmacy", "kimia farma", "guardian",
+        "century", "viva", "k24", "resep",
+        "checkup", "check up", "medical", "lab", "laboratorium", "rontgen", "x-ray",
+        "usg", "ct scan", "mri", "operasi", "surgery", "rawat inap", "rawat jalan",
+        "vaksin", "vaccine", "imunisasi", "suntik", "infus", "terapi", "therapy"
+      ]
+    },
+    {
+      "categoryId": "11",
+      "priority": 100,
+      "name": "Pendidikan",
+      "keywords": [
+        "pendidikan", "education", "sekolah", "school", "spp", "uang sekolah",
+        "kuliah", "kampus", "university", "universitas", "akademi", "institut",
+        "kursus", "course", "les", "bimbel", "bimbingan belajar", "privat",
+        "training", "pelatihan", "workshop", "seminar", "bootcamp",
+        "buku", "book", "gramedia", "togamas", "periplus", "alat tulis", "atk",
+        "pensil", "pulpen", "kertas", "print", "fotocopy", "fotokopi",
+        "skripsi", "thesis", "tugas", "assignment", "ujian", "test", "exam",
+        "sertifikasi", "certification"
+      ]
+    },
+    {
+      "categoryId": "5",
+      "priority": 90,
+      "name": "Makanan",
+      "keywords": [
+        "makan", "food", "lapar", "kenyang", "sarapan", "breakfast", "lunch", "dinner",
+        "brunch", "supper", "snack", "cemilan",
+        "resto", "restaurant", "restoran", "warung", "warteg", "cafe", "kafe", "kedai",
+        "kantin", "food court", "foodcourt",
+        "nasi", "ayam", "soto", "bakso", "mie", "mi", "sate", "satay", "gado-gado",
+        "rendang", "sop", "soup", "gulai", "opor", "rawon", "pecel", "lotek",
+        "nasi goreng", "mie goreng", "kwetiau", "bihun", "soun",
+        "sosis", "sausage", "nugget", "kornet", "daging", "meat", "ikan", "fish",
+        "udang", "shrimp", "cumi", "squid", "kepiting", "crab", "kerang", "clam",
+        "telur", "egg", "tahu", "tofu", "tempe", "tempeh", "sayur", "vegetable",
+        "mcd", "mcdonald", "kfc", "kentucky", "burger king", "wendy", "a&w",
+        "pizza hut", "domino", "papa ron", "california fried chicken", "cfc",
+        "hoka hoka bento", "hokben", "yoshinoya", "pepper lunch", "richeese",
+        "dimsum", "bakpao", "siomay", "batagor", "pempek", "tekwan", "sushi",
+        "ramen", "udon", "soba", "yakiniku", "shabu", "hotpot", "tomyam",
+        "burger", "pizza", "pasta", "spaghetti", "steak", "ribs", "chicken wing",
+        "sandwich", "hotdog", "kebab", "taco", "burrito",
+        "gorengan", "martabak", "terang bulan", "roti", "bread", "kue", "cake",
+        "donat", "donut", "croissant", "pancake", "waffle", "es krim", "ice cream",
+        "gelato", "frozen yogurt", "froyo",
+        "kopi", "coffee", "starbucks", "kopi kenangan", "janji jiwa", "fore coffee",
+        "jco", "j.co", "excelso", "anomali", "tanamera",
+        "teh", "tea", "chatime", "xing fu tang", "gulu gulu", "kokumi",
+        "jus", "juice", "smoothie", "milkshake", "boba", "bubble tea",
+        "minuman", "drink", "minum", "air mineral", "aqua"
+      ]
+    },
+    {
+      "categoryId": "6",
+      "priority": 80,
+      "name": "Transport",
+      "keywords": [
+        "bensin", "pertamax", "pertalite", "solar", "bbm", "fuel", "spbu", "shell",
+        "pertamina", "oli", "oil",
+        "grab", "gojek", "uber", "maxim", "indriver", "ojek online", "ojol",
+        "grabcar", "grabike", "gocar", "gojek",
+        "ojek", "taxi", "taksi", "blue bird", "bluebird", "express", "angkot",
+        "bus", "transjakarta", "busway", "metromini", "kopaja",
+        "kereta", "train", "krl", "commuter", "commuterline", "mrt", "lrt",
+        "railink", "whoosh",
+        "parkir", "parking", "tol", "toll", "e-toll", "etoll", "flo",
+        "service motor", "service mobil", "servis", "cuci motor", "cuci mobil",
+        "ganti oli", "ban", "tire", "aki", "accu", "kampas rem", "tune up"
+      ]
+    },
+    {
+      "categoryId": "8",
+      "priority": 70,
+      "name": "Hiburan",
+      "keywords": [
+        "nonton", "bioskop", "cinema", "xxi", "21", "cgv", "cinepolis", "flix",
+        "imax", "premiere", "velvet", "film", "movie",
+        "netflix", "disney", "disney+", "hbo", "hbo max", "amazon prime", "apple tv",
+        "viu", "vidio", "iqiyi", "wetv", "youtube premium", "youtube music",
+        "spotify", "apple music", "joox", "langit musik", "tidal",
+        "game", "gaming", "steam", "playstation", "ps4", "ps5", "xbox", "nintendo",
+        "switch", "mobile legend", "ml", "pubg", "free fire", "ff", "genshin",
+        "valorant", "dota", "codm", "cod mobile", "top up", "diamond", "uc",
+        "konser", "concert", "festival", "tiket", "ticket", "wisata", "tour",
+        "liburan", "vacation", "holiday", "travel", "trip",
+        "hotel", "penginapan", "villa", "resort", "airbnb", "oyo", "reddoorz",
+        "traveloka", "tiket.com", "pegipegi",
+        "karaoke", "ktv", "inul vista", "navaplus", "billiard", "biliar",
+        "bowling", "timezone", "amazone", "funworld", "dufan", "ancol",
+        "gym", "fitness", "fitnes", "olahraga", "sport", "futsal", "badminton",
+        "bulutangkis", "renang", "kolam renang", "tenis", "golf", "yoga",
+        "zumba", "crossfit", "muay thai", "boxing"
+      ]
+    },
+    {
+      "categoryId": "7",
+      "priority": 50,
+      "name": "Belanja",
+      "keywords": [
+        "belanja", "shopping", "beli", "buy", "purchase", "order", "pesan",
+        "baju", "clothes", "kaos", "shirt", "kemeja", "dress", "rok", "celana",
+        "pants", "jeans", "jaket", "jacket", "sweater", "hoodie",
+        "sepatu", "shoes", "sneakers", "sandal", "sendal", "heels", "boots",
+        "tas", "bag", "backpack", "ransel", "dompet", "wallet", "purse",
+        "jam tangan", "watch", "kacamata", "glasses", "sunglasses", "topi",
+        "hat", "cap", "ikat pinggang", "belt", "kaos kaki", "socks",
+        "uniqlo", "zara", "h&m", "pull&bear", "bershka", "stradivarius",
+        "mango", "gap", "cotton on", "giordano", "levi's", "nike", "adidas",
+        "puma", "converse", "vans", "new balance",
+        "shopee", "tokopedia", "tokped", "lazada", "bukalapak", "blibli",
+        "zalora", "jd.id", "orami", "sociolla", "sephora online",
+        "indomaret", "alfamart", "alfamidi", "supermarket", "superindo",
+        "hypermart", "carrefour", "giant", "lotte mart", "transmart",
+        "ranch market", "farmers market", "hero",
+        "elektronik", "electronic", "gadget", "hp", "handphone", "smartphone",
+        "iphone", "samsung", "xiaomi", "oppo", "vivo", "realme",
+        "laptop", "notebook", "macbook", "komputer", "pc", "tablet", "ipad",
+        "tv", "television", "kulkas", "refrigerator", "ac", "air conditioner",
+        "mesin cuci", "washing machine", "rice cooker", "magic com",
+        "blender", "mixer", "oven", "microwave", "dispenser", "vacuum",
+        "erafone", "ibox", "digimap", "best denki", "electronic city",
+        "electronic solution", "courts", "ace hardware", "informa", "ikea",
+        "kosmetik", "cosmetic", "makeup", "make up", "skincare", "skin care",
+        "parfum", "perfume", "fragrance", "cologne", "lipstik", "lipstick",
+        "foundation", "cushion", "serum", "moisturizer", "sunscreen", "toner",
+        "cleanser", "facial wash", "masker", "mask", "scrub",
+        "shampoo", "conditioner", "hair mask", "sabun", "soap", "body wash",
+        "pasta gigi", "toothpaste", "sikat gigi", "toothbrush", "mouthwash",
+        "deodorant", "antiperspirant", "lotion", "body lotion", "hand cream",
+        "sephora", "sociolla", "watsons", "guardian", "century", "kimia farma",
+        "tissue", "tisu", "toilet paper", "detergen", "detergent", "softener",
+        "pewangi", "freshener", "pembersih", "cleaner", "disinfectant",
+        "sapu", "broom", "pel", "mop", "ember", "bucket", "lap", "cloth",
+        "furniture", "mebel", "sofa", "kursi", "chair", "meja", "table",
+        "lemari", "cabinet", "wardrobe", "kasur", "mattress", "bantal", "pillow",
+        "sprei", "bedsheet", "selimut", "blanket", "gorden", "curtain"
+      ]
+    }
+  ]
+}
