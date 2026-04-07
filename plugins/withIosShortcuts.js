@@ -132,23 +132,23 @@ const withIosShortcuts = (config) => {
       'QuickAddIntent.swift',
       'TransactionParser.swift',
       'TransactionQueuer.swift'
-    ].forEach((f) => addAppFile(`${EXTENSION_NAME}/${f}`, extTarget.uuid, extGroup.uuid, true));
+    ].forEach((f) => addAppFile(f, extTarget.uuid, extGroup.uuid, true));
 
     // Resource Files
-    addAppFile(`${EXTENSION_NAME}/IngatUangIntents-Info.plist`, extTarget.uuid, extGroup.uuid, false);
-    addAppFile(`${EXTENSION_NAME}/IngatUangIntents.entitlements`, extTarget.uuid, extGroup.uuid, false);
+    addAppFile('IngatUangIntents-Info.plist', extTarget.uuid, extGroup.uuid, false);
+    addAppFile('IngatUangIntents.entitlements', extTarget.uuid, extGroup.uuid, false);
 
     // ---- Configure Build Settings ----
     const targetUuid = extTarget.uuid;
 
-    xcodeProject.addBuildProperty('INFOPLIST_FILE', `${EXTENSION_NAME}/IngatUangIntents-Info.plist`, EXTENSION_NAME);
-    xcodeProject.addBuildProperty('CODE_SIGN_ENTITLEMENTS', `${EXTENSION_NAME}/IngatUangIntents.entitlements`, EXTENSION_NAME);
-    xcodeProject.addBuildProperty('PRODUCT_BUNDLE_IDENTIFIER', extBundleId, EXTENSION_NAME);
-    xcodeProject.addBuildProperty('SWIFT_VERSION', '5.9', EXTENSION_NAME);
-    xcodeProject.addBuildProperty('IPHONEOS_DEPLOYMENT_TARGET', '16.0', EXTENSION_NAME);
-    xcodeProject.addBuildProperty('SKIP_INSTALL', 'YES', EXTENSION_NAME);
-    xcodeProject.addBuildProperty('TARGETED_DEVICE_FAMILY', '"1,2"', EXTENSION_NAME);
-    xcodeProject.addBuildProperty('APPLICATION_EXTENSION_API_ONLY', 'YES', EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('INFOPLIST_FILE', `"${EXTENSION_NAME}/IngatUangIntents-Info.plist"`, null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('CODE_SIGN_ENTITLEMENTS', `"${EXTENSION_NAME}/IngatUangIntents.entitlements"`, null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('PRODUCT_BUNDLE_IDENTIFIER', `"${extBundleId}"`, null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('SWIFT_VERSION', '5.9', null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('IPHONEOS_DEPLOYMENT_TARGET', '16.0', null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('SKIP_INSTALL', 'YES', null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('TARGETED_DEVICE_FAMILY', '"1,2"', null, EXTENSION_NAME);
+    xcodeProject.updateBuildProperty('APPLICATION_EXTENSION_API_ONLY', 'YES', null, EXTENSION_NAME);
 
     console.log(`[withIosShortcuts] ✅ Configured target build settings`);
 
