@@ -147,6 +147,10 @@ export const storage = {
     await AsyncStorageImpl.deleteWallet(id);
   },
 
+  async getWalletStats(): Promise<AsyncStorageImpl.WalletStats> {
+    return await AsyncStorageImpl.getWalletStats();
+  },
+
   async getWalletBalances(): Promise<Record<string, number>> {
     const transactions = await this.getTransactions();
     const balances: Record<string, number> = {};
@@ -586,4 +590,5 @@ export type {
   SplitBillAssignment,
   SplitBillPersonSummary,
   Wallet,
+  WalletStats,
 } from './storage';

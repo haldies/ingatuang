@@ -1,0 +1,7 @@
+{
+  "name": "shared-storage",
+  "version": "1.0.0",
+  "description": "Local Shared Storage Module",
+  "main": "index.ts",
+  "types": "index.ts"
+}

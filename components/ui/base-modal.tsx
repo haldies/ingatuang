@@ -1,4 +1,4 @@
-import { Modal, View, Pressable } from 'react-native';
+import { Modal, View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import React from 'react';
 
 interface BaseModalProps {
@@ -7,6 +7,8 @@ interface BaseModalProps {
   children: React.ReactNode;
   containerClassName?: string;
   overlayClassName?: string;
+  style?: ViewStyle;
+  overlayStyle?: ViewStyle;
   animationType?: 'fade' | 'slide' | 'none';
   statusBarTranslucent?: boolean;
 }
@@ -15,8 +17,10 @@ export function BaseModal({
   visible,
   onClose,
   children,
-  containerClassName = "w-full max-w-[340px]",
-  overlayClassName = "flex-1 bg-black/50 justify-center items-center px-5",
+  containerClassName = "",
+  overlayClassName = "",
+  style,
+  overlayStyle,
   animationType = "fade",
   statusBarTranslucent = true,
 }: BaseModalProps) {
@@ -28,13 +32,15 @@ export function BaseModal({
       onRequestClose={onClose}
       statusBarTranslucent={statusBarTranslucent}
     >
-      <View className="flex-1">
+      <View style={styles.flex}>
         <Pressable 
-          className={overlayClassName} 
+          className={overlayClassName}
+          style={[styles.overlay, overlayStyle, !overlayClassName && !overlayStyle && styles.defaultOverlay]} 
           onPress={onClose}
         >
           <Pressable 
-            className={containerClassName} 
+            className={containerClassName}
+            style={[styles.container, style, !containerClassName && !style && styles.defaultContainer]}
             onPress={(e) => e.stopPropagation()}
           >
             {children}
@@ -44,3 +50,28 @@ export function BaseModal({
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  container: {
+    overflow: 'hidden',
+  },
+  defaultOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  defaultContainer: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+  }
+});

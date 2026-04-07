@@ -1,8 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
 import { Platform } from 'react-native';
 
 const tintColorLight = '#3b82f6';
@@ -27,15 +22,42 @@ export const Colors = {
   },
 };
 
+/**
+ * PROPORTIONAL CORNER RADIUS SYSTEM
+ * Based on Apple/Modern UI design principles.
+ * cornerRadius = height * ratio
+ */
+export const CORNER_RATIO = {
+  small: 0.18,   // For buttons, chips, small inputs (height < 60)
+  medium: 0.12,  // For cards, banners, list items (height < 150)
+  large: 0.1,    // For sheets, modals, large containers (height >= 150)
+};
+
+/**
+ * Returns a rounded integer corner radius based on height and ratio.
+ * @param height The height of the element
+ * @param type 'small' | 'medium' | 'large' (defaults based on height)
+ */
+export function getRadius(height: number, type?: 'small' | 'medium' | 'large'): number {
+  let ratio = CORNER_RATIO.medium;
+  
+  if (type) {
+    ratio = CORNER_RATIO[type];
+  } else {
+    // Automatic selection based on height
+    if (height < 60) ratio = CORNER_RATIO.small;
+    else if (height < 150) ratio = CORNER_RATIO.medium;
+    else ratio = CORNER_RATIO.large;
+  }
+  
+  return Math.round(height * ratio);
+}
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -43,11 +65,5 @@ export const Fonts = Platform.select({
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });

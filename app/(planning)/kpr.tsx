@@ -1,219 +1,88 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { formatCurrency } from '@/lib/utils/format';
+import { Colors, getRadius } from '@/constants/theme';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Header } from '@/components/ui/header';
 import { useTranslation } from 'react-i18next';
 
-export default function KPRScreen() {
+export default function KPRCalculator() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [loanAmount, setLoanAmount] = useState('500000000');
+  
+  const [propertyPrice, setPropertyPrice] = useState('500000000');
+  const [downPaymentPct, setDownPaymentPct] = useState('20');
   const [interestRate, setInterestRate] = useState('8');
-  const [tenure, setTenure] = useState('15');
+  const [tenorYears, setTenorYears] = useState('15');
 
-  const calculateMonthlyPayment = () => {
-    const P = parseFloat(loanAmount);
-    const r = parseFloat(interestRate) / 100 / 12;
-    const n = parseFloat(tenure) * 12;
+  const result = useMemo(() => {
+    const price = parseFloat(propertyPrice) || 0;
+    const dp = (parseFloat(downPaymentPct) || 0) / 100 * price;
+    const loanAmount = price - dp;
+    const rate = (parseFloat(interestRate) || 0) / 100 / 12;
+    const months = (parseInt(tenorYears) || 0) * 12;
 
-    if (!P || !r || !n) return 0;
+    if (months === 0 || rate === 0) return { monthlyPayment: loanAmount / (months || 1), totalPayment: loanAmount, totalInterest: 0, loanAmount, dp };
 
-    const monthly = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-    return Math.round(monthly);
-  };
-
-  const monthlyPayment = calculateMonthlyPayment();
-  const totalPayment = monthlyPayment * parseFloat(tenure) * 12;
-  const totalInterest = totalPayment - parseFloat(loanAmount);
+    const monthlyPayment = (loanAmount * rate * Math.pow(1 + rate, months)) / (Math.pow(1 + rate, months) - 1);
+    const totalPayment = monthlyPayment * months;
+    
+    return { monthlyPayment, totalPayment, totalInterest: totalPayment - loanAmount, loanAmount, dp };
+  }, [propertyPrice, downPaymentPct, interestRate, tenorYears]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('kpr.header')}</Text>
-        <View style={{ width: 32 }} />
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>{t('kpr.monthly_installment')}</Text>
-            <Text style={styles.resultValue}>Rp {monthlyPayment.toLocaleString('id-ID')}</Text>
-            
-            <View style={styles.divider} />
-            
-            <View style={styles.detailsRow}>
-              <View>
-                <Text style={styles.detailLabel}>{t('kpr.total_loan')}</Text>
-                <Text style={styles.detailValue}>Rp {parseInt(loanAmount || '0').toLocaleString('id-ID')}</Text>
-              </View>
-              <View>
-                <Text style={styles.detailLabel}>{t('kpr.total_interest')}</Text>
-                <Text style={styles.detailValue}>Rp {totalInterest.toLocaleString('id-ID')}</Text>
-              </View>
-            </View>
+    <ScreenWrapper backgroundColor="#fff">
+      <Header title={t('features.kpr')} />
+      <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
+        
+        <View style={[styles.mainCard, { borderRadius: getRadius(200, 'large'), backgroundColor: Colors.light.tint }]}>
+          <Text style={styles.cardLabel}>ANGSURAN PER BULAN (ESTIMASI)</Text>
+          <Text style={styles.cardAmount}>{formatCurrency(result.monthlyPayment)}</Text>
+          <View style={styles.divider} />
+          <View style={styles.footer}>
+             <View><Text style={styles.footLabel}>PINJAMAN POKOK</Text><Text style={styles.footVal}>{formatCurrency(result.loanAmount)}</Text></View>
+             <View style={{ alignItems: 'flex-end' }}><Text style={styles.footLabel}>BUNGA TOTAL</Text><Text style={[styles.footVal, { fontWeight: '900' }]}>{formatCurrency(result.totalInterest)}</Text></View>
           </View>
+        </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('kpr.loan_amount_label')}</Text>
-            <TextInput
-              style={styles.input}
-              value={loanAmount}
-              onChangeText={setLoanAmount}
-              keyboardType="numeric"
-              placeholder="0"
-            />
+        <View style={styles.form}>
+          <View style={[styles.inputBox, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>HARGA PROPERTI (Rp)</Text><TextInput style={styles.inputText} keyboardType="numeric" value={propertyPrice} onChangeText={setPropertyPrice} /></View>
+          <View style={styles.row}>
+            <View style={[styles.inputBox, { flex: 1, borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>DP (%)</Text><TextInput style={styles.inputText} keyboardType="numeric" value={downPaymentPct} onChangeText={setDownPaymentPct} /></View>
+            <View style={[styles.inputBox, { flex: 1, borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>SUKU BUNGA (%)</Text><TextInput style={styles.inputText} keyboardType="numeric" value={interestRate} onChangeText={setInterestRate} /></View>
           </View>
+          <View style={[styles.inputBox, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>TENOR (TAHUN)</Text><TextInput style={styles.inputText} keyboardType="numeric" value={tenorYears} onChangeText={setTenorYears} /></View>
+        </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('kpr.interest_rate_label')}</Text>
-            <TextInput
-              style={styles.input}
-              value={interestRate}
-              onChangeText={setInterestRate}
-              keyboardType="numeric"
-              placeholder="0"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('kpr.tenure_label')}</Text>
-            <TextInput
-              style={styles.input}
-              value={tenure}
-              onChangeText={setTenure}
-              keyboardType="numeric"
-              placeholder="0"
-            />
-          </View>
-
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={20} color="#64748b" />
-            <Text style={styles.infoText}>
-              {t('kpr.info_text')}
-            </Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        <View style={[styles.summary, { borderRadius: getRadius(120) }]}>
+           <Text style={styles.sumTitle}>RINGKASAN PEMBAYARAN</Text>
+           <View style={styles.sumRow}><Text style={styles.sumLabel}>Total Dikembalikan (Pokok + Bunga)</Text><Text style={styles.sumVal}>{formatCurrency(result.totalPayment)}</Text></View>
+           <View style={styles.sumRow}><Text style={styles.sumLabel}>Uang Muka (Down Payment)</Text><Text style={styles.sumVal}>{formatCurrency(result.dp)}</Text></View>
+        </View>
+      </ScrollView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  resultCard: {
-    backgroundColor: Colors.light.tint,
-    padding: 24,
-    borderRadius: 24,
-    marginBottom: 32,
-    shadowColor: Colors.light.tint,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  resultLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  resultValue: {
-    fontSize: 28,
-    color: '#fff',
-    fontWeight: '800',
-    marginBottom: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginBottom: 16,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginBottom: 4,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1e293b',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 12,
-    gap: 12,
-    alignItems: 'center',
-  },
-  infoText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#64748b',
-    lineHeight: 18,
-  },
+  container: { flex: 1 },
+  mainCard: { padding: 28, marginBottom: 24, elevation: 12, shadowColor: Colors.light.tint, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+  cardLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.6)', letterSpacing: 1.5 },
+  cardAmount: { fontSize: 32, fontWeight: '900', color: '#fff', marginVertical: 10 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 20 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between' },
+  footLabel: { fontSize: 8, fontWeight: '800', color: 'rgba(255,255,255,0.5)', marginBottom: 2 },
+  footVal: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  form: { gap: 14 },
+  inputBox: { padding: 16, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9' },
+  inputLabel: { fontSize: 9, fontWeight: '900', color: '#94a3b8', marginBottom: 4, letterSpacing: 0.5 },
+  inputText: { fontSize: 18, fontWeight: '800', color: '#0f172a', padding: 0 },
+  row: { flexDirection: 'row', gap: 12 },
+  summary: { marginTop: 32, padding: 24, backgroundColor: '#f1f5f9' },
+  sumTitle: { fontSize: 10, fontWeight: '900', color: '#64748b', letterSpacing: 1, marginBottom: 16 },
+  sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  sumLabel: { fontSize: 12, color: '#475569', fontWeight: '500' },
+  sumVal: { fontSize: 13, fontWeight: '800', color: '#1e293b' },
 });

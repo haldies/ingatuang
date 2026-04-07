@@ -34,6 +34,7 @@ export function AddTransactionModal({
   transaction,
   onSuccess,
 }: AddTransactionModalProps) {
+  // useSafeAreaInsets diganti SafeAreaView untuk handling yang lebih robust
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -208,7 +209,7 @@ export function AddTransactionModal({
           }],
         }}
       >
-        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'bottom']}>
         {/* Header */}
         <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
           <TouchableOpacity onPress={onClose} className="p-1 w-10">
@@ -353,13 +354,12 @@ export function AddTransactionModal({
             onPress={handleSubmit}
             disabled={loading}
           >
-           
             <Text className="text-base font-semibold text-white">
               {loading ? 'Menyimpan...' : transaction ? 'Perbarui' : 'Simpan'}
             </Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+        </SafeAreaView>
 
       {/* Calendar Overlay */}
       {showCalendar && (

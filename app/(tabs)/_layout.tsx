@@ -12,6 +12,10 @@ import { AddMenuModal } from '@/components/layout/add-menu-modal';
 import { AddTransactionModal } from '@/components/transactions/add-transaction-modal';
 import { AddSubscriptionModal } from '@/components/subscriptions/add-subscription-modal';
 import { QuickAddModal } from '@/components/transactions/quick-add-modal';
+import { Colors } from '@/constants/theme';
+import { useShortcutSync } from '@/lib/hooks/use-shortcut-sync';
+import { useDeepLinkHandler } from '@/lib/hooks/use-deep-link-handler';
+import { AppState } from 'react-native';
 
 export default function TabLayout() {
   const router = useRouter();
@@ -21,6 +25,42 @@ export default function TabLayout() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [quickAddText, setQuickAddText] = useState('');
+  
+  useShortcutSync();
+  
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') eventEmitter.emit(EVENTS.APP_RESUMED);
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    // Listen for Siri Shortcut events (dari use-shortcut-sync.ios.ts)
+    const onQuickAdd = (data?: { text: string }) => {
+      if (data?.text) {
+        setQuickAddText(data.text);
+        setIsQuickAddModalOpen(true);
+      }
+    };
+    const onManualAdd = () => setIsTransactionModalOpen(true);
+
+    eventEmitter.on(EVENTS.QUICK_ADD_REQUESTED, onQuickAdd);
+    eventEmitter.on(EVENTS.MANUAL_ADD_REQUESTED, onManualAdd);
+
+    return () => {
+      subscription.remove();
+      eventEmitter.off(EVENTS.QUICK_ADD_REQUESTED, onQuickAdd);
+      eventEmitter.off(EVENTS.MANUAL_ADD_REQUESTED, onManualAdd);
+    };
+  }, []);
+  
+  useDeepLinkHandler({
+    onQuickAdd: (text) => {
+      setQuickAddText(text);
+      setIsQuickAddModalOpen(true);
+    },
+    onManualAdd: () => setIsTransactionModalOpen(true)
+  });
   
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonOpacity = useRef(new Animated.Value(1)).current;
@@ -28,76 +68,40 @@ export default function TabLayout() {
   useEffect(() => {
     if (isMenuOpen) {
       Animated.parallel([
-        Animated.spring(buttonScale, {
-          toValue: 3,
-          useNativeDriver: true,
-          tension: 50,
-          friction: 7,
-        }),
-        Animated.timing(buttonOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
+        Animated.spring(buttonScale, { toValue: 3, useNativeDriver: true, tension: 50, friction: 7 }),
+        Animated.timing(buttonOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.spring(buttonScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 50,
-          friction: 7,
-        }),
-        Animated.timing(buttonOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
+        Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, tension: 50, friction: 7 }),
+        Animated.timing(buttonOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
       ]).start();
     }
   }, [isMenuOpen]);
 
-  const handleTransactionPress = () => {
-    setIsMenuOpen(false);
-    setIsTransactionModalOpen(true);
+  const handleTransactionPress = () => { 
+    setIsMenuOpen(false); 
+    setTimeout(() => setIsTransactionModalOpen(true), 300);
   };
-
-  const handleQuickAddPress = () => {
-    setIsMenuOpen(false);
-    setIsQuickAddModalOpen(true);
+  const handleQuickAddPress = () => { 
+    setIsMenuOpen(false); 
+    setTimeout(() => setIsQuickAddModalOpen(true), 300);
   };
-
-  const handleBudgetingPress = () => {
-    setIsMenuOpen(false);
-    setIsSubscriptionModalOpen(true);
+  const handleBudgetingPress = () => { 
+    setIsMenuOpen(false); 
+    setTimeout(() => setIsSubscriptionModalOpen(true), 300);
   };
-
-  const handleSplitBillPress = () => {
-    setIsMenuOpen(false);
-    router.push('/split-bill');
-  };
-
-  const handleTransactionSuccess = () => {
-    setIsTransactionModalOpen(false);
-    eventEmitter.emit(EVENTS.TRANSACTION_ADDED);
-  };
-
-  const handleQuickAddSuccess = () => {
-    setIsQuickAddModalOpen(false);
-    eventEmitter.emit(EVENTS.TRANSACTION_ADDED);
-  };
-
-  const handleSubscriptionSuccess = () => {
-    setIsSubscriptionModalOpen(false);
-    eventEmitter.emit(EVENTS.SUBSCRIPTION_ADDED);
+  const handleSplitBillPress = () => { 
+    setIsMenuOpen(false); 
+    setTimeout(() => router.push('/split-bill'), 300);
   };
 
   return (
     <>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#3b82f6',
-          tabBarInactiveTintColor: '#6b7280',
+          tabBarActiveTintColor: Colors.light.tint,
+          tabBarInactiveTintColor: '#64748b',
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarShowLabel: true,
@@ -106,70 +110,43 @@ export default function TabLayout() {
             borderTopWidth: 1,
             borderTopColor: '#f1f5f9',
             paddingTop: 10,
-            paddingBottom: Platform.OS === 'ios' ? (insets.bottom > 0 ? insets.bottom + 4 : 14) : 14,
+            paddingBottom: Platform.select({ ios: insets.bottom > 0 ? insets.bottom + 8 : 24, default: 20 }),
+            height: Platform.select({ ios: insets.bottom > 0 ? 88 + insets.bottom / 2 : 72, default: 72 }),
             elevation: 0,
             shadowOpacity: 0,
           },
-          tabBarItemStyle: {
-            paddingVertical: 4,
-          },
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '600',
-            marginTop: 0,
-            marginBottom: 4,
-          },
-          tabBarIconStyle: {
-            marginTop: 4,
-          },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 4 },
         }}>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: t('home'),
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="explore"
-          options={{
-            title: t('stats'),
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'pie-chart' : 'pie-chart-outline'} size={24} color={color} />
-            ),
-          }}
-        />
+        <Tabs.Screen name="index" options={{ title: t('home'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} /> }} />
+        <Tabs.Screen name="explore" options={{ title: t('stats'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'pie-chart' : 'pie-chart-outline'} size={24} color={color} /> }} />
         <Tabs.Screen
           name="add"
           options={{
             title: '',
             tabBarIcon: () => null,
-            tabBarButton: (props) => (
+            tabBarButton: () => (
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <TouchableOpacity
                   onPress={() => setIsMenuOpen(true)}
                   activeOpacity={0.9}
                   style={{
-                    top: -32,
-                    width: 62,
-                    height: 62,
-                    borderRadius: 31,
-                    backgroundColor: '#3b82f6',
-                    borderWidth: 5,
+                    top: -28,
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: Colors.light.tint,
+                    borderWidth: 4,
                     borderColor: '#fff',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    elevation: 0,
+                    elevation: 10,
+                    shadowColor: Colors.light.tint,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
                   }}
                 >
-                  <Animated.View 
-                    style={{
-                      transform: [{ scale: buttonScale }],
-                      opacity: buttonOpacity,
-                    }}
-                  >
+                  <Animated.View style={{ transform: [{ scale: buttonScale }], opacity: buttonOpacity }}>
                     <Ionicons name="add" size={32} color="#fff" />
                   </Animated.View>
                 </TouchableOpacity>
@@ -177,64 +154,14 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="budgeting"
-          options={{
-            title: t('budgeting'),
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: t('setting'),
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />
-            ),
-          }}
-        />
-        
-        {/* Strictly hiding subscriptions as requested */}
-        <Tabs.Screen name="subscriptions" options={{ href: null }} />
+        <Tabs.Screen name="budgeting" options={{ title: t('budgeting'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} /> }} />
+        <Tabs.Screen name="profile" options={{ title: t('setting'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} /> }} />
       </Tabs>
 
-      {/* Modals remains unchanged */}
-      {isMenuOpen && (
-        <AddMenuModal
-          visible={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          onTransactionPress={handleTransactionPress}
-          onQuickAddPress={handleQuickAddPress}
-          onSubscriptionPress={handleBudgetingPress}
-          onSplitBillPress={handleSplitBillPress}
-        />
-      )}
-
-      {isTransactionModalOpen && (
-        <AddTransactionModal
-          visible={isTransactionModalOpen}
-          onClose={() => setIsTransactionModalOpen(false)}
-          onSuccess={handleTransactionSuccess}
-        />
-      )}
-
-      {isQuickAddModalOpen && (
-        <QuickAddModal
-          visible={isQuickAddModalOpen}
-          onClose={() => setIsQuickAddModalOpen(false)}
-          onSuccess={handleQuickAddSuccess}
-        />
-      )}
-
-      {isSubscriptionModalOpen && (
-        <AddSubscriptionModal
-          visible={isSubscriptionModalOpen}
-          onClose={() => setIsSubscriptionModalOpen(false)}
-          onSuccess={handleSubscriptionSuccess}
-        />
-      )}
+      <AddMenuModal visible={isMenuOpen} onClose={() => setIsMenuOpen(false)} onTransactionPress={handleTransactionPress} onQuickAddPress={handleQuickAddPress} onSubscriptionPress={handleBudgetingPress} onSplitBillPress={handleSplitBillPress} />
+      <AddTransactionModal visible={isTransactionModalOpen} onClose={() => setIsTransactionModalOpen(false)} onSuccess={() => { setIsTransactionModalOpen(false); eventEmitter.emit(EVENTS.TRANSACTION_ADDED); }} />
+      <QuickAddModal visible={isQuickAddModalOpen} onClose={() => { setIsQuickAddModalOpen(false); setQuickAddText(''); }} onSuccess={() => { setIsQuickAddModalOpen(false); eventEmitter.emit(EVENTS.TRANSACTION_ADDED); }} initialText={quickAddText} />
+      <AddSubscriptionModal visible={isSubscriptionModalOpen} onClose={() => setIsSubscriptionModalOpen(false)} onSuccess={() => { setIsSubscriptionModalOpen(false); eventEmitter.emit(EVENTS.SUBSCRIPTION_ADDED); }} />
     </>
   );
 }

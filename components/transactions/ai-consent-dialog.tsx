@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { Colors } from '@/constants/theme';
-import { BaseModal } from '../ui/base-modal';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface AIConsentDialogProps {
   visible: boolean;
@@ -12,94 +11,89 @@ interface AIConsentDialogProps {
 export function AIConsentDialog({ visible, onAccept, onDecline }: AIConsentDialogProps) {
   const [isChecked, setIsChecked] = React.useState(false);
 
+  if (!visible) return null;
+
   return (
-    <BaseModal
-      visible={visible}
-      onClose={onDecline}
-      overlayClassName="flex-1 bg-slate-900/40 justify-center items-center p-6"
-      containerClassName="bg-white rounded-[32px] p-6 w-full max-w-[500px] max-h-[85%]"
+    <SafeAreaView 
+      style={[StyleSheet.absoluteFill, { backgroundColor: '#fff', zIndex: 9999 }]} 
+      edges={['top', 'bottom']}
     >
+      <View className="flex-1 px-6 pt-12 pb-6 bg-white">
       {/* Title */}
-      <Text className="text-[22px] font-extrabold text-gray-900 text-center mb-5 tracking-tighter">
-        Fitur Quick Add dengan AI
+      <Text className="text-[28px] font-extrabold text-gray-900 mb-2 tracking-tighter">
+        Syarat & Ketentuan
+      </Text>
+      <Text className="text-[15px] font-medium text-blue-500 mb-8">
+        Selamat datang di IngatUang
       </Text>
 
       {/* Content */}
       <ScrollView 
-        className="max-h-[400px]"
+        className="flex-1"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 24 }}
       >
-        <Text className="text-[15px] text-gray-600 leading-[22px] mb-5 text-center">
-          Fitur Quick Add menggunakan AI untuk membantu Anda menambahkan transaksi dengan cepat dan mudah.
+        <Text className="text-[15px] text-gray-600 leading-[24px] mb-8 text-left">
+          Sebelum Anda menggunakan layanan kami untuk mencatat keuangan pribadi, mohon luangkan waktu untuk membaca Syarat & Ketentuan serta Kebijakan Privasi dasar aplikasi ini.
         </Text>
 
         <View className="mb-5">
-          <Text className="text-base font-semibold text-gray-900 mb-2">Apa yang kami lakukan</Text>
-          <Text className="text-sm text-gray-500 leading-5">
-            • Memproses teks transaksi Anda secara lokal{"\n"}
-            • Mendeteksi nominal, kategori, dan deskripsi otomatis{"\n"}
-            • Menyimpan transaksi ke database lokal Anda
+          <Text className="text-base font-semibold text-gray-900 mb-2">1. Privasi & Penyimpanan Data</Text>
+          <Text className="text-[14px] text-gray-500 leading-[22px]">
+            • Secara default, semua data transaksi keuangan Anda disimpan <Text className="font-bold text-gray-700">secara lokal</Text> di perangkat Anda.{"\n"}
+            • Kami tidak dapat mengakses, melihat, atau membagikan catatan keuangan pribadi Anda ke pihak ketiga mana pun tanpa izin eksplisit (misal: saat sinkronisasi cloud).
           </Text>
         </View>
 
         <View className="mb-5">
-          <Text className="text-base font-semibold text-gray-900 mb-2">Privasi Anda</Text>
-          <Text className="text-sm text-gray-500 leading-5">
-            • Data transaksi Anda tetap di perangkat Anda{"\n"}
-            • Kami tidak mengirim data ke server eksternal{"\n"}
-            • Anda dapat menghapus data kapan saja
+          <Text className="text-base font-semibold text-gray-900 mb-2">2. Tanggung Jawab Pengguna</Text>
+          <Text className="text-[14px] text-gray-500 leading-[22px]">
+            • IngatUang adalah alat pencatatan finansial pribadi. Kami tidak memberikan saran finansial, investasi, atau akuntansi resmi.{"\n"}
+            • Keakuratan data yang dimasukkan sepenuhnya adalah tanggung jawab Anda.
           </Text>
         </View>
 
         <View className="mb-5">
-          <Text className="text-base font-semibold text-gray-900 mb-2">Peningkatan AI</Text>
-          <Text className="text-sm text-gray-500 leading-5 mb-1">
-            Dengan persetujuan Anda, kami dapat menggunakan data transaksi yang telah dianonimkan untuk:
+          <Text className="text-base font-semibold text-gray-900 mb-2">3. Keamanan Perangkat</Text>
+          <Text className="text-[14px] text-gray-500 leading-[22px]">
+            • Keamanan data yang disimpan bergantung pada keamanan perangkat keras Anda (seperti PIN, sidik jari, atau FaceID bawaan OS Anda). Pastikan untuk selalu melengkapi perangkat Anda dengan keamanan.
           </Text>
-          <Text className="text-sm text-gray-500 leading-5">
-            • Meningkatkan akurasi deteksi kategori{"\n"}
-            • Memperbaiki parsing nominal dan deskripsi{"\n"}
-            • Mengembangkan fitur AI yang lebih baik
-          </Text>
-          <Text className="text-[13px] text-gray-400 italic mt-2 leading-[18px]">
-             Data yang digunakan akan dianonimkan dan tidak mengandung informasi pribadi Anda.
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-base font-semibold text-gray-900 mb-2">4. Peningkatan Layanan</Text>
+          <Text className="text-[14px] text-gray-500 leading-[22px]">
+            • Aplikasi mungkin secara otomatis mengumpulkan log error (*crash report*) anonim yang _tidak memuat identitas atau data keuangan_ Anda. Data ini semata-mata digunakan developer untuk memperbaiki *bug* dan stabilitas sistem.
           </Text>
         </View>
       </ScrollView>
 
-      {/* Consent Checkbox */}
-      <TouchableOpacity 
-        className="flex-row items-center mt-5 gap-3 px-1"
-        onPress={() => setIsChecked(!isChecked)}
-        activeOpacity={0.7}
-      >
-        <View className={`w-[22px] h-[22px] rounded-full border-2 items-center justify-center ${isChecked ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
-          {isChecked && <View className="w-2 h-2 rounded-full bg-white" />}
-        </View>
-        <Text className="text-sm text-gray-600 font-medium">Saya menyetujui ketentuan di atas</Text>
-      </TouchableOpacity>
-
-      {/* Buttons */}
-      <View className="flex-row gap-3 mt-6">
-        <TouchableOpacity
-          className="flex-1 py-3.5 rounded-2xl border border-slate-200 items-center justify-center"
-          onPress={onDecline}
+      {/* Footer Area / Action */}
+      <View className="pt-4 border-t border-gray-100 bg-white">
+        <TouchableOpacity 
+          className="flex-row items-center mb-6 gap-3 px-1"
+          onPress={() => setIsChecked(!isChecked)}
+          activeOpacity={0.7}
         >
-          <Text className="text-[15px] font-bold text-slate-500">Lewati</Text>
+          <View className={`w-6 h-6 rounded-full border-2 items-center justify-center ${isChecked ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+            {isChecked && <View className="w-2.5 h-2.5 rounded-full bg-white" />}
+          </View>
+          <Text className="text-[14px] text-gray-700 font-medium leading-5 pr-4">
+            Saya telah membaca dan menyetujui Ketentuan Layanan & Privasi IngatUang
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className={`flex-1 flex-row items-center justify-center gap-2 py-3.5 rounded-2xl ${isChecked ? 'bg-blue-500' : 'bg-slate-200'}`}
+          className={`w-full flex-row items-center justify-center gap-2 py-4 rounded-2xl ${isChecked ? 'bg-blue-500 shadow-sm shadow-blue-500/30' : 'bg-slate-200'}`}
           onPress={onAccept}
           disabled={!isChecked}
         >
-          <Text className="text-[15px] font-bold text-white">Terima</Text>
+          <Text className={`text-[16px] font-bold ${isChecked ? 'text-white' : 'text-slate-400'}`}>
+            Mulai Gunakan IngatUang
+          </Text>
         </TouchableOpacity>
       </View>
-
-      <Text className="text-[12px] text-gray-400 text-center mt-4 leading-4">
-        Anda dapat mengubah preferensi ini kapan saja di Pengaturan
-      </Text>
-    </BaseModal>
+      </View>
+    </SafeAreaView>
   );
 }

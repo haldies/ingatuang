@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -19,21 +18,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { parseTransactionText } from '@/lib/ai/ai-parser';
 import { storage } from '@/lib/storage/storage-adapter';
-import { AIConsentDialog } from './ai-consent-dialog';
-import { hasShownAIConsent, saveAIConsent } from '@/lib/ai/ai-consent';
 import { CustomAlert } from '../ui/custom-alert';
 
 interface QuickAddModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  initialText?: string;
 }
 
-export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProps) {
-  const [text, setText] = useState('');
+export function QuickAddModal({ visible, onClose, onSuccess, initialText }: QuickAddModalProps) {
+  const [text, setText] = useState(initialText || '');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
   const [alertConfig, setAlertConfig] = useState({
     visible: false,
     title: '',
@@ -41,28 +38,18 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
     type: 'info' as 'success' | 'error' | 'info'
   });
 
-  // Check if we need to show consent dialog
   useEffect(() => {
-    const checkConsent = async () => {
-      if (visible) {
-        const hasShown = await hasShownAIConsent();
-        if (!hasShown) {
-          setShowConsentDialog(true);
-        }
-      }
-    };
-    checkConsent();
+    if (visible && initialText) {
+      setText(initialText);
+    }
+  }, [visible, initialText]);
+
+  // Reset state saat modal ditutup
+  useEffect(() => {
+    if (!visible) {
+      setAlertConfig(prev => ({ ...prev, visible: false }));
+    }
   }, [visible]);
-
-  const handleConsentAccept = async () => {
-    await saveAIConsent(true);
-    setShowConsentDialog(false);
-  };
-
-  const handleConsentDecline = async () => {
-    await saveAIConsent(false);
-    setShowConsentDialog(false);
-  };
 
   const handleSubmit = async () => {
     if (!text.trim()) {
@@ -70,52 +57,32 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
       return;
     }
 
-    console.log('🚀 [QuickAdd] Starting transaction submission...');
-    console.log('📝 [QuickAdd] Input text:', text.trim());
-
-    // Dismiss keyboard
     Keyboard.dismiss();
-
     setIsProcessing(true);
     setError('');
 
     try {
-      // Parse transaction text using local AI parser
-      console.log('🔍 [QuickAdd] Parsing transaction text...');
       const parsed = parseTransactionText(text.trim());
-      console.log('✅ [QuickAdd] Parsed result:', JSON.stringify(parsed, null, 2));
       
       if (!parsed) {
-        console.log('❌ [QuickAdd] Parsing failed - no result');
         setError('Tidak dapat memproses transaksi. Pastikan ada nominal yang jelas.');
         setIsProcessing(false);
         return;
       }
 
-      // Get categories to map categoryId
-      console.log('📂 [QuickAdd] Fetching categories...');
       const categories = await storage.getCategories();
-      console.log('📂 [QuickAdd] Available categories:', categories.length);
-      
       const category = categories.find(c => 
         c.name.toLowerCase().includes(parsed.categoryId) || 
         c.id === parsed.categoryId
       );
-      console.log('🏷️ [QuickAdd] Matched category:', category?.name || 'Not found');
 
-      // If category not found by name, find by type
       const finalCategoryId = category?.id || 
         categories.find(c => c.type === parsed.type)?.id || 
-        (parsed.type === 'INCOME' ? '1' : '12'); // Default to first income/expense category
-      
-      console.log('🏷️ [QuickAdd] Final category ID:', finalCategoryId);
+        (parsed.type === 'INCOME' ? '1' : '12');
 
-      // Get selected wallet
       const selectedWalletId = await storage.getSelectedWalletId();
       const finalWalletId = selectedWalletId === 'all' ? 'default' : selectedWalletId;
-      console.log('👛 [QuickAdd] Use wallet ID:', finalWalletId);
 
-      // Prepare transaction data
       const transactionData = {
         amount: parsed.amount,
         type: parsed.type,
@@ -124,15 +91,9 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
         walletId: finalWalletId,
         notes: parsed.notes,
       };
-      console.log('💾 [QuickAdd] Transaction data to save:', JSON.stringify(transactionData, null, 2));
 
-      // Save to local storage
-      console.log('💾 [QuickAdd] Saving to AsyncStorage...');
-      const savedTransaction = await storage.addTransaction(transactionData);
-      console.log('✅ [QuickAdd] Transaction saved successfully!');
-      console.log('✅ [QuickAdd] Saved transaction:', JSON.stringify(savedTransaction, null, 2));
+      await storage.addTransaction(transactionData);
 
-      // Show success message
       setAlertConfig({
         visible: true,
         title: 'Transaksi Berhasil',
@@ -140,15 +101,11 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
         type: 'success'
       });
 
-      console.log('🎉 [QuickAdd] Process completed successfully!');
       setText('');
-      // onClose will be called from the alert's button or handleClose
     } catch (err) {
-      console.error('❌ [QuickAdd] Error adding transaction:', err);
       setError('Terjadi kesalahan saat menyimpan transaksi');
     } finally {
       setIsProcessing(false);
-      console.log('🏁 [QuickAdd] Process finished');
     }
   };
 
@@ -161,126 +118,134 @@ export function QuickAddModal({ visible, onClose, onSuccess }: QuickAddModalProp
     }
   };
 
+  // PERBAIKAN BUG BLACK SCREEN:
+  // Semua sub-dialog dirender di DALAM satu <Modal> yang sama.
+  // Ini mencegah dua Modal bertumpuk yang menyebabkan black screen di iOS.
   return (
     <>
-      <AIConsentDialog
-        visible={showConsentDialog}
-        onAccept={handleConsentAccept}
-        onDecline={handleConsentDecline}
-      />
-      
-      <CustomAlert
-        visible={alertConfig.visible}
-        title={alertConfig.title}
-        message={alertConfig.message}
-        type={alertConfig.type}
-        onClose={() => {
-          setAlertConfig(prev => ({ ...prev, visible: false }));
-          if (alertConfig.type === 'success') {
-            onClose();
-            if (onSuccess) onSuccess();
-          }
-        }}
-      />
+      {/* FIX: CustomAlert dirender TERPISAH, BUKAN return awal */}
+      {alertConfig.visible && (
+        <CustomAlert
+          visible={alertConfig.visible}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          onClose={() => {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+            if (alertConfig.type === 'success') {
+              onClose();
+              if (onSuccess) onSuccess();
+            }
+          }}
+        />
+      )}
+
+      {/* Modal utama - hanya tampil jika tidak ada dialog di atasnya */}
       <Modal
-        visible={visible && !showConsentDialog}
+        visible={visible && !alertConfig.visible}
         animationType="slide"
-        transparent={false}
+        transparent={true}
         onRequestClose={handleClose}
         statusBarTranslucent
       >
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              onPress={handleClose}
-              disabled={isProcessing}
-              style={styles.closeButton}
+        <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.keyboardView}
             >
-              <Ionicons name="close" size={28} color="#6b7280" />
-            </TouchableOpacity>
-            <Text style={styles.title}>Quick Add</Text>
-            <View style={styles.placeholder} />
-          </View>
-
-          <ScrollView 
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {/* Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Deskripsi Transaksi</Text>
-              <TextInput
-                style={styles.input}
-                value={text}
-                onChangeText={setText}
-                placeholder="Contoh: Beli kopi 25 ribu"
-                placeholderTextColor="#9ca3af"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                editable={!isProcessing}
-                autoFocus
-                returnKeyType="done"
-                blurOnSubmit={true}
-                onSubmitEditing={Keyboard.dismiss}
-              />
-              <Text style={styles.hint}>
-                Tulis nominal dan deskripsi, contoh "Makan siang 50rb" atau "Gaji 5 juta"
-              </Text>
-            </View>
-
-            {/* Error */}
-            {error ? (
-              <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle" size={20} color="#ef4444" />
-                <Text style={styles.errorText}>{error}</Text>
+              {/* Header */}
+              <View style={styles.header}>
+                <TouchableOpacity
+                  onPress={handleClose}
+                  disabled={isProcessing}
+                  style={styles.closeButton}
+                >
+                  <Ionicons name="close" size={28} color="#6b7280" />
+                </TouchableOpacity>
+                <Text style={styles.title}>Quick Add</Text>
+                <View style={styles.placeholder} />
               </View>
-            ) : null}
-          </ScrollView>
 
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleClose}
-              disabled={isProcessing}
-            >
-              <Text style={styles.cancelButtonText}>Batal</Text>
-            </TouchableOpacity>
+              <ScrollView 
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+              >
+                {/* Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Deskripsi Transaksi</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={text}
+                    onChangeText={setText}
+                    placeholder='Contoh: Beli kopi 25 ribu'
+                    placeholderTextColor="#9ca3af"
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    editable={!isProcessing}
+                    autoFocus
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+                  <Text style={styles.hint}>
+                    Tulis nominal dan deskripsi, contoh "Makan siang 50rb" atau "Gaji 5 juta"
+                  </Text>
+                </View>
 
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                (!text.trim() || isProcessing) && styles.submitButtonDisabled,
-              ]}
-              onPress={handleSubmit}
-              disabled={!text.trim() || isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.submitButtonText}>Memproses...</Text>
-                </>
-              ) : (
-                <Text style={styles.submitButtonText}>Tambah Transaksi</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+                {/* Error */}
+                {error ? (
+                  <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle" size={20} color="#ef4444" />
+                    <Text style={styles.errorText}>{error}</Text>
+                  </View>
+                ) : null}
+              </ScrollView>
+
+              {/* Footer */}
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={handleClose}
+                  disabled={isProcessing}
+                >
+                  <Text style={styles.cancelButtonText}>Batal</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    (!text.trim() || isProcessing) && styles.submitButtonDisabled,
+                  ]}
+                  onPress={handleSubmit}
+                  disabled={!text.trim() || isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <ActivityIndicator size="small" color="#fff" />
+                      <Text style={styles.submitButtonText}>Memproses...</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.submitButtonText}>Tambah Transaksi</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  modalOverlay: {
     flex: 1,
     backgroundColor: '#fff',
   },

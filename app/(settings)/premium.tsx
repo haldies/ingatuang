@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -63,6 +63,8 @@ const PREMIUM_FEATURES = [
   },
 ];
 
+import { Header } from '@/components/ui/header';
+
 export default function PremiumScreen() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = React.useState<'monthly' | 'yearly'>('yearly');
@@ -92,15 +94,7 @@ export default function PremiumScreen() {
       />
       
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => router.back()}
-            style={styles.backButton}
-          >
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <Header title="Premium Access" transparent />
 
         <ScrollView 
           showsVerticalScrollIndicator={false}

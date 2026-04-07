@@ -1,5 +1,5 @@
 // Simple event emitter for cross-component communication
-type EventCallback = () => void;
+type EventCallback = (data?: any) => void;
 
 class EventEmitter {
   private events: Map<string, EventCallback[]> = new Map();
@@ -21,10 +21,10 @@ class EventEmitter {
     }
   }
 
-  emit(event: string) {
+  emit(event: string, data?: any) {
     const callbacks = this.events.get(event);
     if (callbacks) {
-      callbacks.forEach(callback => callback());
+      callbacks.forEach(callback => callback(data));
     }
   }
 }
@@ -38,4 +38,8 @@ export const EVENTS = {
   SUBSCRIPTION_ADDED: 'subscription_added',
   SUBSCRIPTION_UPDATED: 'subscription_updated',
   WALLET_UPDATED: 'wallet_updated',
+  APP_RESUMED: 'app_resumed',
+  // iOS Shortcut events
+  QUICK_ADD_REQUESTED: 'quick_add_requested',
+  MANUAL_ADD_REQUESTED: 'manual_add_requested',
 } as const;

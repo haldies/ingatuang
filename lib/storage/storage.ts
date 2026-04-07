@@ -51,6 +51,12 @@ export interface Wallet {
   createdAt: string;
 }
 
+export interface WalletStats {
+  totalBalance: number;
+  walletCount: number;
+  transactionCount: number;
+}
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -201,6 +207,21 @@ export async function deleteWallet(id: string): Promise<void> {
   if (selectedId === id) {
     await setSelectedWalletId('default');
   }
+}
+
+export async function getWalletStats(): Promise<WalletStats> {
+  const wallets = await getWallets();
+  const transactions = await getTransactions();
+  
+  const totalBalance = transactions.reduce((sum, t) => {
+    return t.type === 'INCOME' ? sum + t.amount : sum - t.amount;
+  }, 0);
+  
+  return {
+    totalBalance,
+    walletCount: wallets.length,
+    transactionCount: transactions.length,
+  };
 }
 
 // Categories

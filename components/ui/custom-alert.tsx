@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/theme';
+import { Colors, getRadius } from '@/constants/theme';
 import { BaseModal } from './base-modal';
 
 interface CustomAlertProps {
@@ -74,10 +74,17 @@ export function CustomAlert({
       onClose={onClose || (() => {})}
       overlayClassName="flex-1 bg-slate-900/40 justify-center items-center p-6"
       containerClassName="w-full max-w-[320px]"
+      overlayStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.4)' }}
+      style={{ backgroundColor: '#fff', borderRadius: getRadius(180, 'medium'), overflow: 'hidden' }}
     >
-      <View className="bg-white rounded-[24px] px-5 pt-6 pb-5 items-center shadow-2xl elevation-10">
+      <View 
+        className="px-5 pt-6 pb-5 items-center shadow-2xl elevation-10"
+      >
         <View className="mb-5">
-          <View className={`w-16 h-16 rounded-full justify-center items-center border ${icon.bgClass} ${icon.borderClass}`}>
+          <View 
+            className={`w-16 h-16 justify-center items-center border ${icon.bgClass} ${icon.borderClass}`}
+            style={{ borderRadius: getRadius(64, 'small') }}
+          >
             <Ionicons name={icon.name} size={32} color={icon.color} />
           </View>
         </View>
@@ -87,7 +94,7 @@ export function CustomAlert({
 
         <View className={`flex-row gap-2.5 w-full ${buttons.length > 2 ? 'flex-col' : ''}`}>
           {buttons.map((button, index) => {
-            let buttonClass = "flex-1 py-3.5 px-4 rounded-2xl items-center justify-center";
+            let buttonClass = "flex-1 py-3.5 px-4 items-center justify-center";
             let textClass = "text-[15px] font-bold";
 
             if (button.style === 'cancel') {
@@ -105,6 +112,7 @@ export function CustomAlert({
               <TouchableOpacity
                 key={index}
                 className={buttonClass}
+                style={{ borderRadius: getRadius(48, 'small') }}
                 onPress={() => handleButtonPress(button)}
                 activeOpacity={0.8}
               >

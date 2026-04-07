@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Platform, Modal, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { storage } from '@/lib/storage/storage-adapter';
 import { router } from 'expo-router';
@@ -11,6 +11,10 @@ import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGE_KEY } from '@/lib/utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateGlobalCurrency } from '@/lib/utils/format';
+import { Header } from '@/components/ui/header';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import ShortcutMenuItem from '@/components/settings/ShortcutMenuItem';
+import { getRadius } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -20,7 +24,7 @@ export default function ProfileScreen() {
   const [sheetType, setSheetType] = useState<'language' | 'currency' | null>(null);
   const [currentCurrency, setCurrentCurrency] = useState('IDR');
 
-  // Alert State (still used for critical errors/confirmations)
+  // Alert State
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
     title: string;
@@ -61,19 +65,14 @@ export default function ProfileScreen() {
         buttons: [{ text: 'OK', onPress: () => router.push('/(tabs)') }],
       });
     } catch (err) {
-      showAlert({
-        title: 'Error',
-        message: 'Gagal menambahkan sample data',
-        type: 'error',
-      });
-      console.error('Error seeding data:', err);
+      showAlert({ title: 'Error', message: 'Gagal menambahkan sample data', type: 'error' });
     }
   };
 
   const handleClearData = () => {
     showAlert({
       title: 'Hapus Semua Data',
-      message: 'Apakah Anda yakin ingin menghapus semua data? Ini akan menghapus:\n\n• Semua transaksi\n• Semua kategori\n• Semua subscription\n• Semua split bills\n• Preferensi AI consent\n\nData tidak dapat dikembalikan!',
+      message: 'Apakah Anda yakin ingin menghapus semua data?\n\nData tidak dapat dikembalikan!',
       type: 'warning',
       buttons: [
         { text: 'Batal', style: 'cancel' },
@@ -84,106 +83,23 @@ export default function ProfileScreen() {
             try {
               await storage.clearAllData();
               await resetAIConsent();
-              showAlert({
-                title: 'Berhasil',
-                message: 'Semua data berhasil dihapus! Dialog AI consent akan muncul lagi saat Anda menggunakan Quick Add.',
-                type: 'success',
-                buttons: [{ text: 'OK', onPress: () => router.push('/(tabs)') }],
-              });
+              showAlert({ title: 'Berhasil', message: 'Semua data dihapus!', type: 'success' });
             } catch (err) {
-              showAlert({
-                title: 'Error',
-                message: 'Gagal menghapus data',
-                type: 'error',
-              });
-              console.error('Error clearing data:', err);
+              showAlert({ title: 'Error', message: 'Gagal menghapus data', type: 'error' });
             }
           },
         },
       ],
     });
-  };
-
-  const handleReportBug = () => {
-    Linking.openURL('mailto:support@ingatuang.com?subject=Bug Report - IngatUang Mobile&body=Deskripsi Bug:%0D%0A%0D%0ALangkah untuk Reproduksi:%0D%0A1. %0D%0A2. %0D%0A3. %0D%0A%0D%0AHasil yang Diharapkan:%0D%0A%0D%0AHasil Aktual:%0D%0A');
-  };
-
-  const handleGiveFeedback = () => {
-    Linking.openURL('mailto:feedback@ingatuang.com?subject=Feedback - IngatUang Mobile&body=Feedback:%0D%0A%0D%0A');
-  };
-
-  const handleRateApp = async () => {
-    const playStoreUrl = 'market://details?id=com.ingatuang.app';
-    const playStoreWebUrl = 'https://play.google.com/store/apps/details?id=com.ingatuang.app';
-    const appStoreUrl = 'itms-apps://itunes.apple.com/app/id64748b';
-    const appStoreWebUrl = 'https://apps.apple.com/app/id64748b';
-
-    const url = Platform.OS === 'ios' ? appStoreUrl : playStoreUrl;
-    const webUrl = Platform.OS === 'ios' ? appStoreWebUrl : playStoreWebUrl;
-    
-    try {
-      if (await Linking.canOpenURL(url)) {
-        await Linking.openURL(url);
-      } else {
-        await Linking.openURL(webUrl);
-      }
-    } catch (error) {
-      showAlert({
-        title: 'Error',
-        message: `Tidak dapat membuka ${Platform.OS === 'ios' ? 'App Store' : 'Play Store'}`,
-        type: 'error',
-      });
-    }
   };
 
   const handleTestNotification = async () => {
     try {
-      const result = await sendLocalNotification(
-        'Test Notifikasi',
-        'Ini adalah test notifikasi dari Ingat Uang!',
-        { test: true, timestamp: Date.now() }
-      );
-      showAlert({
-        title: 'Test Notifikasi',
-        message: result 
-          ? `Notifikasi berhasil dikirim! ID: ${result}\n\nCek notification tray di HP kamu.`
-          : 'Notifikasi gagal dikirim.',
-        type: result ? 'success' : 'error',
-      });
-    } catch (error) {
-      showAlert({
-        title: 'Error',
-        message: `Gagal mengirim notifikasi: ${error}`,
-        type: 'error',
-      });
+      await sendLocalNotification('Test', 'Berhasil!');
+      showAlert({ title: 'Sukses', message: 'Notifikasi terkirim', type: 'success' });
+    } catch (err) {
+      showAlert({ title: 'Error', message: 'Gagal kirim notifikasi', type: 'error' });
     }
-  };
-
-  const handleResetAIConsent = async () => {
-    showAlert({
-      title: 'Reset AI Consent Dialog',
-      message: 'Dialog AI consent akan muncul lagi saat Anda menggunakan Quick Add. Ini berguna untuk testing.',
-      type: 'info',
-      buttons: [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'default',
-          onPress: async () => {
-            try {
-              await resetAIConsent();
-              showAlert({
-                title: 'Berhasil',
-                message: 'AI consent telah direset!',
-                type: 'success',
-              });
-            } catch (error) {
-              showAlert({ title: 'Error', message: 'Gagal mereset AI consent', type: 'error' });
-            }
-          },
-        },
-      ],
-    });
   };
 
   const openSheet = (type: 'language' | 'currency') => {
@@ -210,47 +126,39 @@ export default function ProfileScreen() {
   ];
 
   const currencies = [
-    { code: 'IDR', name: 'Indoneisan Rupiah', symbol: 'Rp' },
+    { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp' },
     { code: 'USD', name: 'US Dollar', symbol: '$' },
     { code: 'EUR', name: 'Euro', symbol: '€' },
     { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-    { code: 'KRW', name: 'South Korean Won', symbol: '₩' },
-    { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-    { code: 'SGD', name: 'Singapore Dollar', symbol: '$' },
-    { code: 'MYR', name: 'Malaysian Ringgit', symbol: 'RM' },
-    { code: 'THB', name: 'Thai Baht', symbol: '฿' },
-    { code: 'PHP', name: 'Philippine Peso', symbol: '₱' },
-    { code: 'VND', name: 'Vietnamese Dong', symbol: '₫' },
-    { code: 'AUD', name: 'Australian Dollar', symbol: '$' },
-    { code: 'CAD', name: 'Canadian Dollar', symbol: '$' },
-    { code: 'GBP', name: 'British Pound', symbol: '£' },
-    { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-    { code: 'HKD', name: 'Hong Kong Dollar', symbol: '$' },
-    { code: 'TWD', name: 'Taiwan Dollar', symbol: '$' },
-    { code: 'SAR', name: 'Saudi Riyal', symbol: 'ر.س' },
-    { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ' },
   ];
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ScreenWrapper backgroundColor="#fff">
+      <Header title={t('settings.header')} hideBack />
+      
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t('settings.header')}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.premiumBanner} onPress={() => router.push('/premium')} activeOpacity={0.9}>
-          <View style={styles.premiumContent}>
-            <View style={styles.premiumTextContainer}>
-              <View style={styles.proBadge}><Text style={styles.proBadgeText}>PRO</Text></View>
-              <Text style={styles.premiumTitle}>IngatUang PRO</Text>
-              <Text style={styles.premiumSubtitle}>Buka semua fitur eksklusif & sinkronisasi awan</Text>
+        {/* PREMIUM BANNER */}
+        <TouchableOpacity 
+          style={styles.premiumBanner} 
+          onPress={() => router.push('/premium')} 
+          activeOpacity={0.9}
+        >
+          <View style={styles.premiumTextContainer}>
+            <View style={styles.proBadge}>
+              <Text style={styles.proBadgeText}>PRO</Text>
             </View>
-            <View style={styles.upgradeBtn}><Feather name="chevron-right" size={20} color="#fff" /></View>
+            <View>
+              <Text style={styles.proTitle}>IngatUang PRO</Text>
+              <Text style={styles.proSubtitle}>Buka fitur premium & laporan detail</Text>
+            </View>
+          </View>
+          <View style={styles.upgradeBtn}>
+            <Feather name="chevron-right" size={20} color="#fff" />
           </View>
         </TouchableOpacity>
 
+        {/* MENU GROUP 1: PREFERENCES */}
         <View style={styles.menuContainer}>
-          {/* Language Selector */}
           <TouchableOpacity style={styles.menuItem} onPress={() => openSheet('language')}>
             <Feather name="globe" size={18} color="#374151" />
             <Text style={styles.menuTitle}>{t('settings.language')}</Text>
@@ -260,7 +168,6 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Currency Selector */}
           <TouchableOpacity style={styles.menuItem} onPress={() => openSheet('currency')}>
             <Feather name="dollar-sign" size={18} color="#374151" />
             <Text style={styles.menuTitle}>{t('settings.currency')}</Text>
@@ -270,28 +177,34 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
 
-          {/* Widget Settings (Android Only) */}
-          {Platform.OS === 'android' && (
-            <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/widget-settings')}>
-              <Feather name="layout" size={18} color="#374151" />
-              <Text style={styles.menuTitle}>{t('settings.widget_settings') || 'Widget Settings'}</Text>
-              <Feather name="chevron-right" size={18} color="#9ca3af" />
-            </TouchableOpacity>
-          )}
+          <ShortcutMenuItem />
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/categories')}>
-            <Feather name="grid" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>{t('settings.categories')}</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/wallets')}>
+            <Feather name="credit-card" size={18} color="#374151" />
+            <Text style={styles.menuTitle}>Dompet & Rekening</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/export')}>
-            <Feather name="download" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>{t('settings.export_data')}</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/subscriptions')}>
+            <Feather name="calendar" size={18} color="#374151" />
+            <Text style={styles.menuTitle}>Kelola Langganan</Text>
+            <Feather name="chevron-right" size={18} color="#9ca3af" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/privacy-security')}>
+            <Feather name="lock" size={18} color="#374151" />
+            <Text style={styles.menuTitle}>Privasi & Keamanan</Text>
+            <Feather name="chevron-right" size={18} color="#9ca3af" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/stats')}>
+            <Feather name="bar-chart-2" size={18} color="#374151" />
+            <Text style={styles.menuTitle}>Statistik & Laporan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
         </View>
 
+        {/* MENU GROUP 2: DEV TOOLS */}
         <View style={styles.devSection}>
           <Text style={styles.sectionTitle}>{t('settings.dev_tools')}</Text>
           <View style={styles.menuContainer}>
@@ -300,11 +213,13 @@ export default function ProfileScreen() {
               <Text style={styles.menuTitle}>{t('settings.test_notification')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem} onPress={handleSeedData}>
               <Feather name="database" size={18} color="#374151" />
               <Text style={styles.menuTitle}>{t('settings.add_sample')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.menuItem} onPress={handleClearData}>
               <Feather name="trash-2" size={18} color="#ef4444" />
               <Text style={[styles.menuTitle, { color: '#ef4444' }]}>{t('settings.clear_data')}</Text>
@@ -314,12 +229,17 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{t('settings.version')}</Text>
+          <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
         </View>
       </ScrollView>
 
-      {/* Modern Bottom Sheet */}
-      <Modal visible={sheetVisible} transparent animationType="fade" onRequestClose={() => setSheetVisible(false)}>
+      {/* MODERN BOTTOM SHEET MODAL */}
+      <Modal 
+        visible={sheetVisible} 
+        transparent 
+        animationType="fade" 
+        onRequestClose={() => setSheetVisible(false)}
+      >
         <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)}>
           <View style={styles.sheetContent}>
             <View style={styles.sheetHeader}>
@@ -341,7 +261,7 @@ export default function ProfileScreen() {
                     <Text style={[styles.sheetItemText, i18n.language === lang.code && styles.sheetItemActive]}>
                       {lang.name}
                     </Text>
-                    {i18n.language === lang.code && <Ionicons name="checkmark-circle" size={20} color="#0f172a" />}
+                    {i18n.language === lang.code && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
                   </TouchableOpacity>
                 ))
               ) : (
@@ -351,14 +271,16 @@ export default function ProfileScreen() {
                     style={styles.sheetItem} 
                     onPress={() => handleSelectCurrency(curr.code)}
                   >
-                    <View style={styles.currencyIcon}><Text style={styles.currencySymbol}>{curr.symbol}</Text></View>
+                    <View style={styles.currencyIcon}>
+                      <Text style={styles.currencySymbol}>{curr.symbol}</Text>
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.sheetItemText, currentCurrency === curr.code && styles.sheetItemActive]}>
                         {curr.code}
                       </Text>
                       <Text style={styles.currencyName}>{curr.name}</Text>
                     </View>
-                    {currentCurrency === curr.code && <Ionicons name="checkmark-circle" size={20} color="#0f172a" />}
+                    {currentCurrency === curr.code && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
                   </TouchableOpacity>
                 ))
               )}
@@ -375,64 +297,48 @@ export default function ProfileScreen() {
         buttons={alertConfig.buttons}
         onClose={() => setAlertVisible(false)}
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#0f172a',
-    letterSpacing: -0.5,
-  },
   premiumBanner: {
-    backgroundColor: '#111827',
-    margin: 20,
-    borderRadius: 24,
-    padding: 24,
-  },
-  premiumContent: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+    padding: 20,
+    borderRadius: getRadius(80), // Auto-calculate based on height 80
+    backgroundColor: '#0f172a',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'space-between',
   },
   premiumTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     flex: 1,
   },
   proBadge: {
     backgroundColor: '#3b82f6',
-    alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: getRadius(22), // Small badge radius
   },
   proBadgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: '900',
   },
-  premiumTitle: {
-    fontSize: 20,
-    fontWeight: '900',
+  proTitle: {
+    fontSize: 16,
+    fontWeight: '800',
     color: '#fff',
-    marginBottom: 4,
   },
-  premiumSubtitle: {
-    fontSize: 13,
-    color: '#9ca3af',
-    lineHeight: 20,
+  proSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
   upgradeBtn: {
     width: 40,
@@ -454,7 +360,6 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   menuTitle: {
-    flex: 1,
     fontSize: 15,
     fontWeight: '600',
     color: '#1e293b',
@@ -463,6 +368,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   badgeText: {
     fontSize: 12,
@@ -472,10 +379,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    overflow: 'hidden',
   },
   devSection: {
-    marginVertical: 24,
+    marginTop: 24,
     paddingTop: 24,
     borderTopWidth: 8,
     borderTopColor: '#f8fafc',
@@ -486,7 +392,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     letterSpacing: 1.5,
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   versionContainer: {
     padding: 40,
@@ -497,7 +403,6 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontWeight: '600',
   },
-  // Sheet Styles
   sheetBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
@@ -505,8 +410,8 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    borderTopLeftRadius: getRadius(320, 'large'), // 32pt proporsional
+    borderTopRightRadius: getRadius(320, 'large'),
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
     maxHeight: '80%',
   },

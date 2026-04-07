@@ -1,39 +1,55 @@
-name: iOS Build (Local)
+name: iOS Build
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      profile:
+        description: 'EAS Build Profile (preview or production)'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
 
 jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: 🏗 Checkout project
+      - name: Checkout project
         uses: actions/checkout@v4
 
-      - name: ⚙️ Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🚀 Setup EAS
+      - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: 🔑 Setup Fastlane (Required for Local iOS Build)
+      - name: Setup Fastlane
         run: brew install fastlane
 
-      - name: 🍎 Build iOS IPA (Local)
-        run: eas build --platform ios --profile preview --local --non-interactive --output ./build-ios.ipa
+      - name: Build iOS App (Local)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_APPLE_ISSUER_ID: ${{ secrets.EXPO_APPLE_ISSUER_ID }}
+          EXPO_APPLE_KEY_ID: ${{ secrets.EXPO_APPLE_KEY_ID }}
+          EXPO_APPLE_API_KEY: ${{ secrets.EXPO_APPLE_API_KEY }}
+        run: |
+          eas build --platform ios --profile production --local --non-interactive --output ./build-ios.ipa
+          eas submit --platform ios --latest --profile production --non-interactive
 
-      - name: 📤 Upload Artifact
+      - name: Upload Artifact (Backup)
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa

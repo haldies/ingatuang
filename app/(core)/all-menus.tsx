@@ -7,43 +7,37 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { Colors, getRadius } from '@/constants/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { initI18n } from '@/lib/utils/i18n'; // Force load check
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Header } from '@/components/ui/header';
 
 const { width } = Dimensions.get('window');
-const COLUMN_WIDTH = (width - 32) / 4; 
-
-const PRIMARY_COLOR = Colors.light.tint;
-const PLAIN_COLOR = '#94a3b8'; 
-
+const COLUMN_WIDTH = (width - 48) / 4; 
 const RECENT_KEY = '@recent_features';
 
 const MENU_GROUPS = [
   {
     title_key: 'main_features',
     items: [
-      { id: 'tax', title: 'Pajak PPh', icon: 'calculator-outline', color: PRIMARY_COLOR, route: '/tax-calculator', isBeta: false },
-      { id: 'manual', title: 'Manual', icon: 'receipt-outline', color: PRIMARY_COLOR, action: 'transaction', isBeta: false },
-      { id: 'quick', title: 'Cepat', icon: 'sparkles-outline', color: PRIMARY_COLOR, action: 'quick-add', isBeta: false },
-      { id: 'wallets', title: 'Dompet', icon: 'wallet-outline', color: PRIMARY_COLOR, route: '/wallets', isBeta: false },
-      { id: 'subscriptions', title: 'Tagihan', icon: 'calendar-outline', color: PRIMARY_COLOR, route: '/subscriptions', isBeta: false },
+      { id: 'tax', title: 'Pajak PPh', icon: 'calculator-outline', color: Colors.light.tint, route: '/tax-calculator' },
+      { id: 'wallets', title: 'Dompet', icon: 'wallet-outline', color: Colors.light.tint, route: '/wallets' },
+      { id: 'subscriptions', title: 'Tagihan', icon: 'calendar-outline', color: Colors.light.tint, route: '/subscriptions' },
     ],
   },
   {
     title_key: 'planning_calculators',
     items: [
-      { id: 'split', title: 'Split Bill', icon: 'git-branch-outline', color: PLAIN_COLOR, route: '/split-bill', isBeta: true },
-      { id: 'investment', title: 'Investasi', icon: 'trending-up-outline', color: PLAIN_COLOR, route: '/investment', isBeta: false },
-      { id: 'retirement', title: 'Pensiun', icon: 'pie-chart-outline', color: PLAIN_COLOR, route: '/retirement', isBeta: false },
-      { id: 'kpr', title: 'Simulasi KPR', icon: 'home-outline', color: PLAIN_COLOR, route: '/kpr', isBeta: false },
-      { id: 'emergency', title: 'Dana Darurat', icon: 'shield-outline', color: PLAIN_COLOR, route: '/emergency', isBeta: false },
-      { id: 'education', title: 'Pendidikan', icon: 'school-outline', color: PLAIN_COLOR, route: '/education', isBeta: true },
-      { id: 'vacation', title: 'Plan Liburan', icon: 'airplane-outline', color: PLAIN_COLOR, route: '/vacation', isBeta: true },
+      { id: 'split', title: 'Split Bill', icon: 'git-branch-outline', color: '#64748b', route: '/split-bill', isBeta: true },
+      { id: 'investment', title: 'Investasi', icon: 'trending-up-outline', color: '#64748b', route: '/investment' },
+      { id: 'retirement', title: 'Pensiun', icon: 'pie-chart-outline', color: '#64748b', route: '/retirement' },
+      { id: 'kpr', title: 'KPR', icon: 'home-outline', color: '#64748b', route: '/kpr' },
+      { id: 'emergency', title: 'Emergency', icon: 'shield-outline', color: '#64748b', route: '/emergency' },
+      { id: 'education', title: 'Edukasi', icon: 'school-outline', color: '#64748b', route: '/education', isBeta: true },
+      { id: 'vacation', title: 'Liburan', icon: 'airplane-outline', color: '#64748b', route: '/vacation', isBeta: true },
     ],
   },
 ];
@@ -53,183 +47,67 @@ export default function AllMenusScreen() {
   const { t } = useTranslation();
   const [recentIds, setRecentIds] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadRecent();
-  }, []);
+  useEffect(() => { loadRecent(); }, []);
 
   const loadRecent = async () => {
     try {
       const stored = await AsyncStorage.getItem(RECENT_KEY);
       if (stored) setRecentIds(JSON.parse(stored));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
-  const trackFeature = async (id: string) => {
+  const handleMenuPress = async (item: any) => {
     try {
-      let updated = [id, ...recentIds.filter(rid => rid !== id)].slice(0, 4);
+      let updated = [item.id, ...recentIds.filter(rid => rid !== item.id)].slice(0, 4);
       setRecentIds(updated);
       await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleMenuPress = (item: any) => {
-    trackFeature(item.id);
-    if (item.route) {
-      router.push(item.route);
-    } else {
-      router.back();
-    }
+    } catch (e) { console.error(e); }
+    if (item.route) router.push(item.route);
   };
 
   const allFlatMenus = MENU_GROUPS.flatMap(g => g.items);
   const recentMenus = allFlatMenus.filter(m => recentIds.includes(m.id));
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('common.all_menus')}</Text>
-        <View style={{ width: 32 }} />
+  const renderItem = (item: any) => (
+    <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => handleMenuPress(item)}>
+      <View style={[styles.iconContainer, { borderRadius: getRadius(64) }]}>
+        <Ionicons name={item.icon as any} size={28} color={item.id === 'tax' || item.id === 'wallets' || item.id === 'subscriptions' ? Colors.light.tint : '#475569'} />
+        {item.isBeta && <View style={[styles.betaBadge, { borderRadius: getRadius(18) }]}><Text style={styles.betaText}>BETA</Text></View>}
       </View>
+      <Text style={styles.itemTitle} numberOfLines={1}>{t('features.' + item.id)}</Text>
+    </TouchableOpacity>
+  );
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+  return (
+    <ScreenWrapper backgroundColor="#fff">
+      <Header title={t('common.all_menus')} />
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {recentMenus.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('common.recent')}</Text>
-            <View style={styles.grid}>
-              {recentMenus.map((item) => (
-                <TouchableOpacity
-                  key={`recent-${item.id}`}
-                  style={styles.menuItem}
-                  onPress={() => handleMenuPress(item)}
-                >
-                  <View style={styles.iconBox}>
-                    <Ionicons name={item.icon as any} size={34} color={item.color} />
-                    {item.isBeta && (
-                      <View style={styles.betaBadge}>
-                        <Text style={styles.betaText}>BETA</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.itemTitle} numberOfLines={1}>{t('features.' + item.id)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <View style={styles.grid}>{recentMenus.map(renderItem)}</View>
           </View>
         )}
 
-        {MENU_GROUPS.map((group, groupIdx) => (
-          <View key={groupIdx} style={styles.section}>
+        {MENU_GROUPS.map((group, idx) => (
+          <View key={idx} style={styles.section}>
             <Text style={styles.sectionTitle}>{t('common.' + group.title_key)}</Text>
-            <View style={styles.grid}>
-              {group.items.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.menuItem}
-                  onPress={() => handleMenuPress(item)}
-                >
-                  <View style={styles.iconBox}>
-                    <Ionicons name={item.icon as any} size={34} color={item.color} />
-                    {item.isBeta && (
-                      <View style={styles.betaBadge}>
-                        <Text style={styles.betaText}>BETA</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={styles.itemTitle} numberOfLines={1}>{t('features.' + item.id)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <View style={styles.grid}>{group.items.map(renderItem)}</View>
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 24,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 16,
-    paddingLeft: 4,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  menuItem: {
-    width: COLUMN_WIDTH,
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  iconBox: {
-    width: COLUMN_WIDTH,
-    height: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    position: 'relative',
-  },
-  betaBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 14,
-    backgroundColor: PRIMARY_COLOR + '20', // Very light primary background
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: PRIMARY_COLOR + '40',
-  },
-  betaText: {
-    fontSize: 7,
-    fontWeight: '800',
-    color: PRIMARY_COLOR,
-  },
-  itemTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#334155',
-    textAlign: 'center',
-    paddingHorizontal: 2,
-  },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 24 },
+  section: { marginBottom: 32 },
+  sectionTitle: { fontSize: 11, fontWeight: '900', color: '#94a3b8', letterSpacing: 1, marginBottom: 20, paddingLeft: 6 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  menuItem: { width: COLUMN_WIDTH, alignItems: 'center', marginBottom: 24, marginHorizontal: 4 },
+  iconContainer: { width: 64, height: 64, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#f1f5f9' },
+  itemTitle: { fontSize: 11, fontWeight: '700', color: '#334155', textAlign: 'center' },
+  betaBadge: { position: 'absolute', top: -5, right: -5, backgroundColor: Colors.light.tint + '15', paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: Colors.light.tint + '30' },
+  betaText: { fontSize: 7, fontWeight: '900', color: Colors.light.tint },
 });
