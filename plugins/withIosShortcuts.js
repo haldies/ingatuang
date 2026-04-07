@@ -111,9 +111,15 @@ const withIosShortcuts = (config) => {
         return;
       }
 
-      const file = isSource 
-        ? xcodeProject.addSourceFile(filePath, { target: targetUuid }, groupUuid)
-        : xcodeProject.addResourceFile(filePath, { target: targetUuid }, groupUuid);
+      let file;
+      if (isSource) {
+         file = xcodeProject.addSourceFile(filePath, { target: targetUuid }, groupUuid);
+      } else {
+         // Use addFile instead of addResourceFile.
+         // Info.plist and .entitlements are NOT bundle resources. 
+         // They are consumed by build settings. This avoids the 'Resources' group crash.
+         file = xcodeProject.addFile(filePath, groupUuid);
+      }
 
       if (!file) {
         // Safe check to avoid crash if something is still not quite right

@@ -16,7 +16,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ingatuang.money",
-      "appGroups": ["group.com.ingatuang.money.shared"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
