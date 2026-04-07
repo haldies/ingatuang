@@ -44,6 +44,11 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          cd ios && pod install
+
       - name: Build iOS App (Local)
         env:
           NODE_OPTIONS: "--no-deprecation"

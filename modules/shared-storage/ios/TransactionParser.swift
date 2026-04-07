@@ -28,7 +28,7 @@ public class TransactionParser {
     }
     
     private static func detectType(from text: String) -> String {
-        let incomeKeywords = ["gaji", "terima", "dapat", "bonus", "income", "masuk", "salary"]
+        let incomeKeywords = ["gaji", "terima", "dapat", "bonus", "income", "masuk", "salary", "upah", "cair", "profit", "untung"]
         for keyword in incomeKeywords {
             if text.contains(keyword) {
                 return "INCOME"
@@ -86,20 +86,22 @@ public class TransactionParser {
         
         return maxAmount
     }
-    
+
     private static func detectCategory(from text: String, type: String) -> String {
-        // Simplified scoring logic for Swift version
+        // IDs match DEFAULT_CATEGORIES in @/lib/storage/storage.ts
         if type == "INCOME" {
-            if text.contains("gaji") { return "1" }
-            if text.contains("bonus") { return "2" }
-            if text.contains("investasi") { return "3" }
-            return "4"
+            if text.contains("gaji") || text.contains("upah") || text.contains("cair") { return "1" }
+            if text.contains("bonus") || text.contains("hadiah") { return "2" }
+            if text.contains("investasi") || text.contains("profit") || text.contains("saham") || text.contains("crypto") { return "3" }
+            return "4" // Lainnya (Income)
         } else {
-            if text.contains("tagihan") || text.contains("pulsa") { return "9" }
-            if text.contains("makan") || text.contains("kopi") { return "5" }
-            if text.contains("transport") || text.contains("bensin") { return "6" }
-            if text.contains("belanja") { return "7" }
-            return "12"
+            if text.contains("tagihan") || text.contains("pulsa") || text.contains("listrik") || text.contains("wifi") || text.contains("internet") { return "9" }
+            if text.contains("makan") || text.contains("kopi") || text.contains("jajan") || text.contains("restoran") || text.contains("sate") || text.contains("bakso") || text.contains("nasgor") { return "5" }
+            if text.contains("transport") || text.contains("bensin") || text.contains("ojek") || text.contains("grab") || text.contains("gojek") || text.contains("parkir") || text.contains("tol") { return "6" }
+            if text.contains("belanja") || text.contains("supermarket") || text.contains("indomaret") || text.contains("alfamart") || text.contains("pasar") || text.contains("mall") { return "7" }
+            if text.contains("nonton") || text.contains("bioskop") || text.contains("game") || text.contains("netflix") || text.contains("spotify") { return "8" }
+            if text.contains("obat") || text.contains("dokter") || text.contains("rs") || text.contains("apotek") { return "10" }
+            return "12" // Lainnya (Expense)
         }
     }
     
