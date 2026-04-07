@@ -9,20 +9,8 @@ const APP_GROUP = 'group.com.ingatuang.money.shared';
 const EXTENSION_NAME = 'IngatUangIntents';
 const EXTENSION_BUNDLE_SUFFIX = '.intents';
 
-/**
- * withIosShortcuts — Config Plugin
- *
- * Membuat App Intents Extension terpisah di Xcode.
- * Ini memungkinkan Siri Shortcut berjalan bahkan saat app
- * benar-benar ter-terminate (killed oleh iOS).
- *
- * Arsitektur:
- * - Main App Target: SharedStorageModule.swift (bridge ke React Native)
- * - IngatUangIntents Extension: QuickAddIntent + TransactionParser + TransactionQueuer
- *   Extension ini ringan, selalu bisa dipanggil iOS tanpa membuka app penuh.
- */
+
 const withIosShortcuts = (config) => {
-  // Step 1: Create extension target in Xcode
   config = withXcodeProject(config, (config) => {
     const xcodeProject = config.modResults;
     const projectRoot = config.modRequest.projectRoot;
@@ -38,14 +26,11 @@ const withIosShortcuts = (config) => {
     const mainBundleId = config.ios?.bundleIdentifier || 'com.ingatuang.money';
     const extBundleId = `${mainBundleId}${EXTENSION_BUNDLE_SUFFIX}`;
 
-    // ---- Create extension directory in ios/ ----
     const extDir = path.join(projectRoot, 'ios', EXTENSION_NAME);
     if (!fs.existsSync(extDir)) {
       fs.mkdirSync(extDir, { recursive: true });
       console.log(`[withIosShortcuts] ✅ Created extension folder: ${EXTENSION_NAME}/`);
     }
-
-    // ---- Copy required files from module to extension folder ----
     const filesToCopy = [
       'QuickAddIntent.swift',
       'TransactionParser.swift',
@@ -65,37 +50,41 @@ const withIosShortcuts = (config) => {
       }
     });
 
-    // ---- Check if extension target exists ----
     const existingTargets = xcodeProject.pbxNativeTargetSection();
-    let extTarget = Object.values(existingTargets).find(
-      (t) => t && t.name === EXTENSION_NAME
-    );
+    let extTargetUuid = null;
+    
+    for (const key in existingTargets) {
+      if (key.endsWith('_comment')) continue;
+      const t = existingTargets[key];
+      if (t && t.name === EXTENSION_NAME || t.name === `"${EXTENSION_NAME}"`) {
+        extTargetUuid = key;
+        break;
+      }
+    }
 
-    if (extTarget) {
+    if (extTargetUuid) {
       console.log(`[withIosShortcuts] ⏭️ Extension target exists: ${EXTENSION_NAME}`);
-      // If it exists, we skip creation to avoid duplicates
+
     } else {
-      // ---- Create new extension target ----
-      extTarget = xcodeProject.addTarget(
+
+      const extTarget = xcodeProject.addTarget(
         EXTENSION_NAME,
         'app_extension',
         EXTENSION_NAME,
         extBundleId
       );
       if (!extTarget) {
-        console.warn('[withIosShortcuts] ❌ Failed to create target');
+        console.warn('[withIosShortcuts] Failed to create target');
         return config;
       }
-      console.log(`[withIosShortcuts] ✅ Created target: ${EXTENSION_NAME}`);
+      extTargetUuid = extTarget.uuid;
+      console.log(`[withIosShortcuts] Created target: ${EXTENSION_NAME}`);
     }
 
-    // ---- Add files to project and group ----
-    // Ensure we have a valid parent group
     const pbxGroupKey = xcodeProject.findPBXGroupKey({ name: appTargetName })
       || xcodeProject.findPBXGroupKey({ name: 'CustomTemplate' })
       || xcodeProject.findPBXGroupKey({ name: '' });
 
-    // Create or find our extension group
     let extGroup = xcodeProject.pbxGroupByName(EXTENSION_NAME);
     if (!extGroup) {
       extGroup = xcodeProject.addPbxGroup([], EXTENSION_NAME, EXTENSION_NAME);
@@ -105,9 +94,8 @@ const withIosShortcuts = (config) => {
     }
 
     const addAppFile = (filePath, targetUuid, groupUuid, isSource = true) => {
-      // Check if already in project to prevent the null path crash
       if (xcodeProject.hasFile(filePath)) {
-        console.log(`[withIosShortcuts] ⏭️ File in project: ${filePath}`);
+        console.log(`[withIosShortcuts] File in project: ${filePath}`);
         return;
       }
 
@@ -115,31 +103,24 @@ const withIosShortcuts = (config) => {
       if (isSource) {
          file = xcodeProject.addSourceFile(filePath, { target: targetUuid }, groupUuid);
       } else {
-         // Use addFile instead of addResourceFile.
-         // Info.plist and .entitlements are NOT bundle resources. 
-         // They are consumed by build settings. This avoids the 'Resources' group crash.
          file = xcodeProject.addFile(filePath, groupUuid);
       }
 
       if (!file) {
-        // Safe check to avoid crash if something is still not quite right
-        console.warn(`[withIosShortcuts] ⚠️ Failed to add file: ${filePath}`);
+        console.warn(`[withIosShortcuts] Failed to add file: ${filePath}`);
       }
     };
-
-    // Swift Source Files
     [
       'QuickAddIntent.swift',
       'TransactionParser.swift',
       'TransactionQueuer.swift'
-    ].forEach((f) => addAppFile(f, extTarget.uuid, extGroup.uuid, true));
+    ].forEach((f) => addAppFile(f, extTargetUuid, extGroup.uuid, true));
 
     // Resource Files
-    addAppFile('IngatUangIntents-Info.plist', extTarget.uuid, extGroup.uuid, false);
-    addAppFile('IngatUangIntents.entitlements', extTarget.uuid, extGroup.uuid, false);
+    addAppFile('IngatUangIntents-Info.plist', extTargetUuid, extGroup.uuid, false);
+    addAppFile('IngatUangIntents.entitlements', extTargetUuid, extGroup.uuid, false);
 
-    // ---- Configure Build Settings ----
-    const targetUuid = extTarget.uuid;
+    const targetUuid = extTargetUuid;
 
     xcodeProject.updateBuildProperty('INFOPLIST_FILE', `"${EXTENSION_NAME}/IngatUangIntents-Info.plist"`, null, EXTENSION_NAME);
     xcodeProject.updateBuildProperty('CODE_SIGN_ENTITLEMENTS', `"${EXTENSION_NAME}/IngatUangIntents.entitlements"`, null, EXTENSION_NAME);
@@ -155,7 +136,6 @@ const withIosShortcuts = (config) => {
     return config;
   });
 
-  // Step 2: Add App Group to Main App entitlements
   config = withEntitlementsPlist(config, (config) => {
     const existing = config.modResults['com.apple.security.application-groups'] || [];
     if (!existing.includes(APP_GROUP)) {
