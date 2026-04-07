@@ -28,13 +28,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install && npx expo install --check
+        run: npm ci && npx expo install --check
 
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
           path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
@@ -44,9 +44,15 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Install CocoaPods
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install CocoaPods (Gem)
         run: |
-          sudo gem install cocoapods
+          gem install cocoapods
           cd ios && pod install
 
       - name: Build iOS App (Local)
