@@ -65,7 +65,24 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4e182d18-b6a4-4662-b156-817c89296504"
+        "projectId": "4e182d18-b6a4-4662-b156-817c89296504",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "IngatUangIntents",
+                  "bundleIdentifier": "com.ingatuang.money.intents",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.ingatuang.money.shared"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }

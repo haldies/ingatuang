@@ -23,7 +23,7 @@
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.intents-service</string>
+		<string>com.apple.app-intents</string>
 	</dict>
 </dict>
 </plist>
