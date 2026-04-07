@@ -1,12 +1,10 @@
 name: iOS Build
+
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       profile:
-        description: 'EAS Build Profile (preview or production)'
+        description: 'EAS Build Profile'
         required: true
         default: 'preview'
         type: choice
@@ -17,9 +15,9 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -27,52 +25,62 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci && npx expo install --check
+      - name: Install deps
+        run: npm ci
 
-      - name: Cache CocoaPods
-        uses: actions/cache@v4
-        with:
-          path: ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
-      - name: Setup EAS
+      - name: Setup Expo
         uses: expo/expo-github-action@v8
         with:
-          eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundler-cache: true
 
-      - name: Install Tools (Fastlane & CocoaPods)
+      - name: Install CocoaPods & Fastlane
         run: |
           gem install cocoapods fastlane
 
-      - name: Build iOS App (Local)
+      - name: Cache Pods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install Pods
+        run: |
+          cd ios
+          pod install --repo-update
+
+      - name: Build iOS (LOCAL)
         env:
-          NODE_OPTIONS: "--no-deprecation"
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_APPLE_ISSUER_ID: ${{ secrets.EXPO_APPLE_ISSUER_ID }}
           EXPO_APPLE_KEY_ID: ${{ secrets.EXPO_APPLE_KEY_ID }}
           EXPO_APPLE_API_KEY: ${{ secrets.EXPO_APPLE_API_KEY }}
         run: |
-          # Use profile from input if triggered manually, otherwise default to preview
           PROFILE=${{ github.event.inputs.profile || 'preview' }}
           echo "Building with profile: $PROFILE"
-          eas build --platform ios --profile $PROFILE --local --non-interactive --output ./build-ios.ipa
-          
-          # Only submit if it's production
+
+          eas build \
+            --platform ios \
+            --profile $PROFILE \
+            --local \
+            --non-interactive \
+            --output ./build-ios.ipa
+
           if [ "$PROFILE" == "production" ]; then
-            eas submit --platform ios --latest --profile production --non-interactive
+            eas submit \
+              --platform ios \
+              --latest \
+              --profile production \
+              --non-interactive
           fi
 
-      - name: Upload Artifact (Backup)
+      - name: Upload IPA
         if: always()
         uses: actions/upload-artifact@v4
         with:
