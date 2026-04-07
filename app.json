@@ -55,7 +55,7 @@
       ],
       "expo-secure-store",
       "./plugins/withAndroidNative",
-      "./plugins/withIosShortcuts",
+      "./plugins/withSimpleIntents",
       "expo-localization"
     ],
     "experiments": {
@@ -68,17 +68,6 @@
         "build": {
           "experimental": {
             "ios": {
-              "appExtensions": [
-                {
-                  "targetName": "IngatUangIntents",
-                  "bundleIdentifier": "com.ingatuang.money.intents",
-                  "entitlements": {
-                    "com.apple.security.application-groups": [
-                      "group.com.ingatuang.money.shared"
-                    ]
-                  }
-                }
-              ]
             }
           }
         }

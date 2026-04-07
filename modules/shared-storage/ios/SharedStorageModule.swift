@@ -1,17 +1,6 @@
 import ExpoModulesCore
 import Foundation
 
-/**
- * SharedStorageModule
- *
- * Bridge React Native ↔ iOS App Group (shared file container).
- * Digunakan untuk membaca antrian transaksi yang ditulis oleh
- * QuickAddIntent (Siri) di background tanpa membuka app.
- *
- * Flow:
- * Siri → QuickAddIntent → TransactionQueuer → file JSON (App Group)
- *      → App dibuka → SharedStorageModule.getQueue() → simpan ke DB
- */
 public class SharedStorageModule: Module {
   private let groupId = "group.com.ingatuang.money.shared"
   private let queueFile = "transaction_queue.json"

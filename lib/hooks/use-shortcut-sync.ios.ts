@@ -7,23 +7,21 @@ export function useShortcutSync() {
   const isProcessing = useRef(false);
 
   const syncQueue = async () => {
-    // Hindari concurrent processing
+    // Safety check for development/Expo Go
     if (isProcessing.current) return;
-    if (!SharedStorage) return;
+    if (!SharedStorage || typeof SharedStorage.getQueue !== 'function') return;
 
     isProcessing.current = true;
 
     try {
-      // Baca file antrian yang ditulis oleh QuickAddIntent (Swift)
       const jsonStr = await SharedStorage.getQueue();
       if (!jsonStr || jsonStr === '[]') return;
 
       const transactions = JSON.parse(jsonStr);
       if (!Array.isArray(transactions) || transactions.length === 0) return;
 
-      console.log(`[iOS Sync] Memproses ${transactions.length} transaksi dari Siri...`);
+      console.log(`[iOS Siri Sync] Processing ${transactions.length} transactions...`);
 
-      // Ambil wallet default untuk fallback
       const wallets = await storage.getWallets?.() ?? [];
       const defaultWalletId = wallets[0]?.id ?? 'default';
 
@@ -32,22 +30,20 @@ export function useShortcutSync() {
         try {
           await storage.addTransaction({
             amount: tx.amount,
-            notes: tx.notes || 'Transaksi',
+            notes: tx.notes || 'Siri Transaction',
             type: (tx.type || 'EXPENSE').toUpperCase() as 'INCOME' | 'EXPENSE',
             categoryId: tx.categoryId || '12',
             date: tx.date || new Date().toISOString(),
-            walletId: defaultWalletId,
+            walletId: tx.walletId || defaultWalletId,
           });
           success++;
         } catch (e) {
-          console.error('[iOS Sync] Gagal simpan transaksi:', e);
+          console.error('[iOS Sync] Failed to save transaction:', e);
         }
       }
 
-      // Hanya hapus antrian jika setidaknya 1 berhasil disimpan
       if (success > 0) {
         await SharedStorage.clearQueue();
-        console.log(`[iOS Sync] ${success} transaksi berhasil disinkron.`);
         eventEmitter.emit(EVENTS.TRANSACTION_ADDED);
       }
     } catch (error) {
@@ -58,15 +54,9 @@ export function useShortcutSync() {
   };
 
   useEffect(() => {
-    // Sync saat app pertama dibuka
     syncQueue();
-
-    // Sync saat app kembali aktif dari background
     const onAppResumed = () => syncQueue();
     eventEmitter.on(EVENTS.APP_RESUMED, onAppResumed);
-
-    return () => {
-      eventEmitter.off(EVENTS.APP_RESUMED, onAppResumed);
-    };
+    return () => eventEmitter.off(EVENTS.APP_RESUMED, onAppResumed);
   }, []);
 }

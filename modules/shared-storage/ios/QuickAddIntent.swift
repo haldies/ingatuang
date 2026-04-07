@@ -1,12 +1,9 @@
 import AppIntents
 import Foundation
 
-// MARK: - Entry Point (WAJIB untuk App Intents Extension)
-// Tanpa @main ini, ExtractAppIntentsMetadata tidak bisa menemukan intent
-// dan akan gagal saat archive.
-@available(iOS 16.0, *)
-@main
-struct IngatUangIntentsMain: AppIntentsExtension {}
+// MARK: - App Intents (Built-in)
+// File ini akan dimasukkan ke target utama aplikasi.
+// Tampilan input (seperti screenshot) dipicu oleh @Parameter transactionText.
 
 // MARK: - 1. Quick Add via Siri
 @available(iOS 16.0, *)
