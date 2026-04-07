@@ -39,17 +39,19 @@ const withSimpleIntents = (config) => {
     const pbxGroupKey = xcodeProject.findPBXGroupKey({ name: appName });
     let group = xcodeProject.pbxGroupByName(targetDirName);
     if (!group) {
-        group = xcodeProject.addPbxGroup([], targetDirName, targetDirName);
+        // Create group WITHOUT a physical path to avoid duplication (AppIntents/AppIntents)
+        group = xcodeProject.addPbxGroup([], targetDirName); 
         if (pbxGroupKey) {
             xcodeProject.addToPbxGroup(group.uuid, pbxGroupKey);
         }
     }
 
     filesToSync.forEach((file) => {
-      const relativePath = path.join(targetDirName, file);
+      // Path relative to the .xcodeproj location (ios/ folder)
+      const relativePath = path.join(appName, targetDirName, file);
       if (!xcodeProject.hasFile(relativePath)) {
         xcodeProject.addSourceFile(relativePath, { target: mainTargetUuid }, group.uuid);
-        console.log(`[withSimpleIntents] ✅ Linked ${file} to main target`);
+        console.log(`[withSimpleIntents] ✅ Linked ${file} to main target at: ${relativePath}`);
       }
     });
 
