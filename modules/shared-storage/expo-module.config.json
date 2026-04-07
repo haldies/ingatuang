@@ -1,9 +1,8 @@
 {
-  "platforms": {
-    "ios": {
-      "modules": [
-        "SharedStorageModule"
-      ]
-    }
+  "name": "shared-storage",
+  "ios": {
+    "modules": [
+      "SharedStorageModule"
+    ]
   }
 }
