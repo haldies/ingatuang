@@ -2,17 +2,13 @@ const { withXcodeProject, withEntitlementsPlist } = require('expo/config-plugins
 const path = require('path');
 const fs = require('fs');
 
-/**
- * Plugin to add Siri App Intent files to the Main App Target.
- * This avoids the @main conflict and separate extension target issues.
- */
 const withSimpleIntents = (config) => {
-  return withXcodeProject(config, (config) => {
+  config = withXcodeProject(config, (config) => {
     const xcodeProject = config.modResults;
     const projectRoot = config.modRequest.projectRoot;
     
     // 1. Define paths
-    const sourceDir = path.join(projectRoot, 'modules', 'shared-storage', 'ios');
+    const sourceDir = path.join(projectRoot, 'modules', 'shared-storage', 'intents');
     const targetDirName = 'AppIntents';
     const iosAppDir = path.join(projectRoot, 'ios', config.modRequest.projectName, targetDirName);
 
@@ -22,10 +18,7 @@ const withSimpleIntents = (config) => {
     }
 
     const filesToSync = [
-      'QuickAddIntent.swift',
-      'TransactionParser.swift',
-      'TransactionQueuer.swift',
-      'SharedStorageModule.swift'
+      'QuickAddIntent.swift'
     ];
 
     // 3. Copy files to the ios build directory

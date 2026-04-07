@@ -1,21 +1,21 @@
 import Foundation
 
-struct QueueEntry: Codable {
-    let id: String
-    let amount: Double
-    let type: String
-    let categoryId: String
-    let notes: String
-    let date: String
-    let createdAt: String
+public struct QueueEntry: Codable {
+    public let id: String
+    public let amount: Double
+    public let type: String
+    public let categoryId: String
+    public let notes: String
+    public let date: String
+    public let createdAt: String
 }
 
-class TransactionQueuer {
-    static let shared = TransactionQueuer()
+public class TransactionQueuer {
+    public static let shared = TransactionQueuer()
     private let groupIdentifier = "group.com.ingatuang.money.shared"
-    private let fileName = "transaction_queue.json"
+    private let storageKey = "pending_transactions"
     
-    func enqueue(parsed: ParsedTransaction) -> Bool {
+    public func enqueue(parsed: ParsedTransaction) -> Bool {
         let entry = QueueEntry(
             id: UUID().uuidString,
             amount: parsed.amount,
@@ -26,22 +26,21 @@ class TransactionQueuer {
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
         
-        guard let folderURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) else {
+        guard let defaults = UserDefaults(suiteName: groupIdentifier) else {
             return false
         }
         
-        let fileURL = folderURL.appendingPathComponent(fileName)
-        
         var queue: [QueueEntry] = []
-        if let data = try? Data(contentsOf: fileURL),
+        if let data = defaults.data(forKey: storageKey),
            let existingQueue = try? JSONDecoder().decode([QueueEntry].self, from: data) {
             queue = existingQueue
         }
         
         queue.append(entry)
         
-        if let data = try? JSONEncoder().encode(queue) {
-            try? data.write(to: fileURL)
+        if let encoded = try? JSONEncoder().encode(queue) {
+            defaults.set(encoded, forKey: storageKey)
+            defaults.synchronize() 
             return true
         }
         

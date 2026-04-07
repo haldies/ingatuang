@@ -1,5 +1,6 @@
 import AppIntents
 import Foundation
+import SharedStorage
 
 @available(iOS 16.0, *)
 struct QuickAddIntent: AppIntent {

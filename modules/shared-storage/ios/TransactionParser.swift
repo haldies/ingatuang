@@ -1,15 +1,15 @@
 import Foundation
 
-struct ParsedTransaction {
-    let amount: Double
-    let type: String
-    let categoryId: String
-    let notes: String
+public struct ParsedTransaction {
+    public let amount: Double
+    public let type: String
+    public let categoryId: String
+    public let notes: String
 }
 
-class TransactionParser {
+public class TransactionParser {
     
-    static func parse(text: String) -> ParsedTransaction? {
+    public static func parse(text: String) -> ParsedTransaction? {
         let lowerText = text.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
         let amount = extractAmount(from: lowerText)
