@@ -1,4 +1,4 @@
-const { withXcodeProject } = require('expo/config-plugins');
+const { withXcodeProject, withEntitlementsPlist } = require('expo/config-plugins');
 const path = require('path');
 const fs = require('fs');
 
@@ -62,6 +62,19 @@ const withSimpleIntents = (config) => {
 
     return config;
   });
+
+  // 5. Add App Group Entitlements to Main App
+  config = withEntitlementsPlist(config, (config) => {
+    const APP_GROUP = 'group.com.ingatuang.money.shared';
+    const groups = config.modResults['com.apple.security.application-groups'] || [];
+    if (!groups.includes(APP_GROUP)) {
+      config.modResults['com.apple.security.application-groups'] = [...groups, APP_GROUP];
+      console.log(`[withSimpleIntents] ✅ Added App Group: ${APP_GROUP}`);
+    }
+    return config;
+  });
+
+  return config;
 };
 
 module.exports = withSimpleIntents;
