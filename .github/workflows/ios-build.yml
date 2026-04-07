@@ -44,8 +44,8 @@ jobs:
           EXPO_APPLE_KEY_ID: ${{ secrets.EXPO_APPLE_KEY_ID }}
           EXPO_APPLE_API_KEY: ${{ secrets.EXPO_APPLE_API_KEY }}
         run: |
-          # Use profile from input if triggered manually, otherwise default to production
-          PROFILE=${{ github.event.inputs.profile || 'production' }}
+          # Use profile from input if triggered manually, otherwise default to preview
+          PROFILE=${{ github.event.inputs.profile || 'preview' }}
           echo "Building with profile: $PROFILE"
           eas build --platform ios --profile $PROFILE --local --non-interactive --output ./build-ios.ipa
           
