@@ -50,10 +50,9 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
-      - name: Install CocoaPods (Gem)
+      - name: Install Tools (Fastlane & CocoaPods)
         run: |
-          gem install cocoapods
-          cd ios && pod install
+          gem install cocoapods fastlane
 
       - name: Build iOS App (Local)
         env:
