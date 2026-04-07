@@ -13,8 +13,6 @@ import { AddTransactionModal } from '@/components/transactions/add-transaction-m
 import { AddSubscriptionModal } from '@/components/subscriptions/add-subscription-modal';
 import { QuickAddModal } from '@/components/transactions/quick-add-modal';
 import { Colors } from '@/constants/theme';
-import { useShortcutSync } from '@/lib/hooks/use-shortcut-sync';
-import { useDeepLinkHandler } from '@/lib/hooks/use-deep-link-handler';
 import { AppState } from 'react-native';
 
 export default function TabLayout() {
@@ -27,40 +25,19 @@ export default function TabLayout() {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [quickAddText, setQuickAddText] = useState('');
   
-  useShortcutSync();
+
   
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === 'active') eventEmitter.emit(EVENTS.APP_RESUMED);
     };
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    // Listen for Siri Shortcut events (dari use-shortcut-sync.ios.ts)
-    const onQuickAdd = (data?: { text: string }) => {
-      if (data?.text) {
-        setQuickAddText(data.text);
-        setIsQuickAddModalOpen(true);
-      }
-    };
-    const onManualAdd = () => setIsTransactionModalOpen(true);
-
-    eventEmitter.on(EVENTS.QUICK_ADD_REQUESTED, onQuickAdd);
-    eventEmitter.on(EVENTS.MANUAL_ADD_REQUESTED, onManualAdd);
-
     return () => {
       subscription.remove();
-      eventEmitter.off(EVENTS.QUICK_ADD_REQUESTED, onQuickAdd);
-      eventEmitter.off(EVENTS.MANUAL_ADD_REQUESTED, onManualAdd);
     };
   }, []);
   
-  useDeepLinkHandler({
-    onQuickAdd: (text) => {
-      setQuickAddText(text);
-      setIsQuickAddModalOpen(true);
-    },
-    onManualAdd: () => setIsTransactionModalOpen(true)
-  });
+
   
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonOpacity = useRef(new Animated.Value(1)).current;

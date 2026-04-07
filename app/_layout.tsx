@@ -10,11 +10,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useState } from 'react';
 import { AIConsentDialog } from '@/components/transactions/ai-consent-dialog';
 import { hasShownAIConsent, saveAIConsent } from '@/lib/ai/ai-consent';
-import * as Linking from 'expo-linking';
 import { parseTransactionText } from '@/lib/ai/ai-parser';
 import { storage } from '@/lib/storage/storage-adapter';
-import { Alert } from 'react-native';
-import { useShortcutSync } from '@/lib/hooks/use-shortcut-sync.ios';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -65,36 +62,7 @@ export default function RootLayout() {
     checkConsent();
   }, []);
 
-  // Sync Siri transactions on launch/resume
-  useShortcutSync();
 
-  // Handler Deep Link (Safe Shortcut)
-  // Cara ini 100% aman dan tidak akan merusak build iOS karena tidak pakai native extension.
-  const url = Linking.useURL();
-  useEffect(() => {
-    if (url) {
-      const { hostname, path, queryParams } = Linking.parse(url);
-      
-      // Deteksi URL: ingatuang://add?text=... atau ingatuang://add/text=...
-      if ((hostname === 'add' || path === 'add') && queryParams?.text) {
-        const textToParse = decodeURIComponent(queryParams.text as string);
-        const parsed = parseTransactionText(textToParse);
-
-        if (parsed) {
-          storage.addTransaction({
-            ...parsed,
-            date: new Date().toISOString(),
-            walletId: 'default',
-          }).then(() => {
-            Alert.alert(
-              'Catat Berhasil! ✅',
-              `Transaksi "${parsed.notes}" senilai Rp${parsed.amount.toLocaleString()} sudah disimpan.`
-            );
-          });
-        }
-      }
-    }
-  }, [url]);
 
   const handleConsentAccept = async () => {
     await saveAIConsent(true);

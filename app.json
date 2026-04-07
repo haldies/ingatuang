@@ -50,7 +50,6 @@
       ],
       "expo-secure-store",
       "./plugins/withAndroidNative",
-      "./plugins/withSimpleIntents",
       "expo-localization"
     ],
     "experiments": {

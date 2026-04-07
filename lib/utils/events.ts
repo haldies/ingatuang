@@ -39,7 +39,4 @@ export const EVENTS = {
   SUBSCRIPTION_UPDATED: 'subscription_updated',
   WALLET_UPDATED: 'wallet_updated',
   APP_RESUMED: 'app_resumed',
-  // iOS Shortcut events
-  QUICK_ADD_REQUESTED: 'quick_add_requested',
-  MANUAL_ADD_REQUESTED: 'manual_add_requested',
 } as const;
