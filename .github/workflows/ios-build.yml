@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
 
       - name: Install dependencies
@@ -41,6 +41,7 @@ jobs:
 
       - name: Build iOS App (Local)
         env:
+          NODE_OPTIONS: "--no-deprecation"
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EXPO_APPLE_ISSUER_ID: ${{ secrets.EXPO_APPLE_ISSUER_ID }}
           EXPO_APPLE_KEY_ID: ${{ secrets.EXPO_APPLE_KEY_ID }}
