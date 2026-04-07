@@ -28,16 +28,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install && npx expo install --check
 
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Setup Fastlane
-        run: brew install fastlane
 
       - name: Build iOS App (Local)
         env:
@@ -47,10 +44,18 @@ jobs:
           EXPO_APPLE_KEY_ID: ${{ secrets.EXPO_APPLE_KEY_ID }}
           EXPO_APPLE_API_KEY: ${{ secrets.EXPO_APPLE_API_KEY }}
         run: |
-          eas build --platform ios --profile production --local --non-interactive --output ./build-ios.ipa
-          eas submit --platform ios --latest --profile production --non-interactive
+          # Use profile from input if triggered manually, otherwise default to production
+          PROFILE=${{ github.event.inputs.profile || 'production' }}
+          echo "Building with profile: $PROFILE"
+          eas build --platform ios --profile $PROFILE --local --non-interactive --output ./build-ios.ipa
+          
+          # Only submit if it's production
+          if [ "$PROFILE" == "production" ]; then
+            eas submit --platform ios --latest --profile production --non-interactive
+          fi
 
       - name: Upload Artifact (Backup)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
