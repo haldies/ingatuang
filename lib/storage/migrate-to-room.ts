@@ -65,6 +65,7 @@ export async function migrateToRoom(): Promise<MigrationResult> {
               type: transaction.type,
               date: transaction.date,
               categoryId: transaction.categoryId,
+              walletId: 'default',
               notes: transaction.notes || '',
             });
             result.transactionsMigrated++;

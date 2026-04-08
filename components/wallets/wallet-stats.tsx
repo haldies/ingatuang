@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { type WalletStats } from '@/lib/storage/storage-adapter';
 import { formatCurrency } from '@/lib/utils/format';
 import { Colors, getRadius } from '@/constants/theme';
@@ -9,8 +9,11 @@ interface WalletStatsProps {
 }
 
 export function WalletStats({ stats }: WalletStatsProps) {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+
   return (
-    <View style={[styles.card, { borderRadius: getRadius(180, 'large'), backgroundColor: Colors.light.tint }]}>
+    <View style={[styles.card, { borderRadius: getRadius(180, 'large'), backgroundColor: theme.tint }]}>
       <Text style={styles.label}>TOTAL SALDO TERSEDIA</Text>
       <Text style={styles.amount}>{formatCurrency(stats.totalBalance)}</Text>
       <View style={styles.footer}>
@@ -29,7 +32,7 @@ export function WalletStats({ stats }: WalletStatsProps) {
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 24, marginBottom: 24, elevation: 8, shadowColor: Colors.light.tint, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 },
+  card: { padding: 24, marginBottom: 24, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.2, shadowRadius: 10 },
   label: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: 1 },
   amount: { fontSize: 26, fontWeight: '900', color: '#fff', marginVertical: 8 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)', paddingTop: 16 },

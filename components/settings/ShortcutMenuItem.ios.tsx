@@ -1,18 +1,22 @@
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Colors } from '@/constants/theme';
 
 export default function ShortcutMenuItem() {
   const router = useRouter();
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   return (
     <TouchableOpacity 
-      style={styles.menuItem} 
+      style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
       onPress={() => router.push('/(settings)/shortcuts')}
     >
-      <Ionicons name="mic-outline" size={18} color="#3b82f6" />
+      <Ionicons name="mic-outline" size={18} color={theme.tint} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.menuTitle}>Apple Shortcuts & Siri</Text>
+        <Text style={[styles.menuTitle, { color: theme.text }]}>Apple Shortcuts & Siri</Text>
         <Text style={styles.menuSubtitle}>Kelola integrasi Siri dan Pintasan Apple</Text>
       </View>
       <Feather name="chevron-right" size={18} color="#9ca3af" />
@@ -26,13 +30,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
     gap: 16,
   },
   menuTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1e293b',
   },
   menuSubtitle: {
     fontSize: 12,

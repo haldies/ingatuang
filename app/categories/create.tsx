@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, useColorScheme as useNativeColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { CustomAlert } from '@/components/ui/custom-alert';
 import { useTranslation } from 'react-i18next';
+import { Header } from '@/components/ui/header';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Colors, getRadius } from '@/constants/theme';
 
 const EMOJI_OPTIONS = [
   '💰', '💵', '💴', '💶', '💷', '💸', '💳', '🏦',
@@ -19,7 +21,6 @@ const EMOJI_OPTIONS = [
   '❤️', '🎉', '⭐', '🌟', '✨', '🔥', '💎', '🎈',
 ];
 
-// Color options
 const COLOR_OPTIONS = [
   '#ef4444', '#f59e0b', '#f97316', '#eab308', '#84cc16',
   '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
@@ -29,6 +30,10 @@ const COLOR_OPTIONS = [
 
 export default function CreateCategoryScreen() {
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [name, setName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('💰');
   const [selectedColor, setSelectedColor] = useState('#8b5cf6');
@@ -60,11 +65,8 @@ export default function CreateCategoryScreen() {
     }
 
     try {
-      // Import storage dynamically to avoid circular dependency
       const { storage } = await import('@/lib/storage/storage-adapter');
       const categories = await storage.getCategories();
-      
-      // Generate new ID
       const maxId = Math.max(...categories.map(c => parseInt(c.id) || 0), 0);
       const newId = (maxId + 1).toString();
 
@@ -76,7 +78,6 @@ export default function CreateCategoryScreen() {
         type: selectedType,
       };
 
-      // Save through storage adapter (will use Room on Android)
       await storage.addCategory(newCategory);
 
       showAlert({
@@ -85,7 +86,6 @@ export default function CreateCategoryScreen() {
         type: 'success',
       });
 
-      // Navigate back after short delay
       setTimeout(() => {
         router.back();
       }, 1000);
@@ -100,52 +100,61 @@ export default function CreateCategoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('categories.create_header')}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <Header title={t('categories.create_header')} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Preview */}
-        <View style={styles.previewSection}>
-          <View style={[styles.previewIcon, { backgroundColor: selectedColor + '20' }]}>
+        <View style={[styles.previewSection, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+          <View style={[styles.previewIcon, { backgroundColor: selectedColor + '20', borderRadius: getRadius(100, 'medium') }]}>
             <Text style={styles.previewEmoji}>{selectedIcon}</Text>
           </View>
-          <Text style={styles.previewName}>{name || t('categories.default_name_preview')}</Text>
+          <Text style={[styles.previewName, { color: theme.text }]}>{name || t('categories.default_name_preview')}</Text>
         </View>
 
         {/* Type Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('categories.type_label')}</Text>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff', borderTopColor: theme.border, borderTopWidth: 1 }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.type_label')}</Text>
           <View style={styles.typeContainer}>
             <TouchableOpacity
-              style={[styles.typeButton, selectedType === 'EXPENSE' && styles.typeButtonActive]}
+              style={[
+                styles.typeButton, 
+                { backgroundColor: isDark ? '#0a0a0a' : '#f8fafc', borderRadius: getRadius(56, 'small') },
+                selectedType === 'EXPENSE' && { backgroundColor: theme.tint }
+              ]}
               onPress={() => setSelectedType('EXPENSE')}
             >
               <Ionicons 
                 name="arrow-down-circle" 
                 size={20} 
-                color={selectedType === 'EXPENSE' ? '#fff' : '#6b7280'} 
+                color={selectedType === 'EXPENSE' ? '#fff' : (isDark ? '#475569' : '#6b7280')} 
               />
-              <Text style={[styles.typeText, selectedType === 'EXPENSE' && styles.typeTextActive]}>
+              <Text style={[
+                styles.typeText, 
+                { color: isDark ? '#94a3b8' : '#64748b' },
+                selectedType === 'EXPENSE' && { color: '#fff' }
+              ]}>
                 {t('dashboard.expense_label')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.typeButton, selectedType === 'INCOME' && styles.typeButtonActive]}
+              style={[
+                styles.typeButton, 
+                { backgroundColor: isDark ? '#0a0a0a' : '#f8fafc', borderRadius: getRadius(56, 'small') },
+                selectedType === 'INCOME' && { backgroundColor: theme.tint }
+              ]}
               onPress={() => setSelectedType('INCOME')}
             >
               <Ionicons 
                 name="arrow-up-circle" 
                 size={20} 
-                color={selectedType === 'INCOME' ? '#fff' : '#6b7280'} 
+                color={selectedType === 'INCOME' ? '#fff' : (isDark ? '#475569' : '#6b7280')} 
               />
-              <Text style={[styles.typeText, selectedType === 'INCOME' && styles.typeTextActive]}>
+              <Text style={[
+                styles.typeText, 
+                { color: isDark ? '#94a3b8' : '#64748b' },
+                selectedType === 'INCOME' && { color: '#fff' }
+              ]}>
                 {t('dashboard.income_label')}
               </Text>
             </TouchableOpacity>
@@ -153,28 +162,37 @@ export default function CreateCategoryScreen() {
         </View>
 
         {/* Name Input */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('categories.name_label')}</Text>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.name_label')}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { 
+              backgroundColor: isDark ? '#0a0a0a' : '#f8fafc',
+              borderColor: theme.border,
+              color: theme.text,
+              borderRadius: getRadius(56, 'small')
+            }]}
             value={name}
             onChangeText={setName}
             placeholder={t('categories.name_placeholder')}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             maxLength={20}
           />
         </View>
 
         {/* Icon Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('categories.icon_label')}</Text>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.icon_label')}</Text>
           <View style={styles.emojiGrid}>
             {EMOJI_OPTIONS.map((emoji) => (
               <TouchableOpacity
                 key={emoji}
                 style={[
                   styles.emojiButton,
-                  selectedIcon === emoji && styles.emojiButtonActive,
+                  { 
+                    backgroundColor: isDark ? '#0a0a0a' : '#f8fafc',
+                    borderRadius: getRadius(48, 'small') 
+                  },
+                  selectedIcon === emoji && { backgroundColor: theme.tint + '20', borderColor: theme.tint, borderWidth: 2 },
                 ]}
                 onPress={() => setSelectedIcon(emoji)}
               >
@@ -185,15 +203,15 @@ export default function CreateCategoryScreen() {
         </View>
 
         {/* Color Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('categories.color_label')}</Text>
+        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.color_label')}</Text>
           <View style={styles.colorGrid}>
             {COLOR_OPTIONS.map((color) => (
               <TouchableOpacity
                 key={color}
                 style={[
                   styles.colorButton,
-                  { backgroundColor: color },
+                  { backgroundColor: color, borderRadius: getRadius(48, 'small') },
                   selectedColor === color && styles.colorButtonActive,
                 ]}
                 onPress={() => setSelectedColor(color)}
@@ -207,11 +225,13 @@ export default function CreateCategoryScreen() {
         </View>
 
         {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <TouchableOpacity 
+          style={[styles.saveButton, { backgroundColor: theme.tint, borderRadius: getRadius(56, 'small'), shadowColor: theme.tint }]} 
+          onPress={handleSave}
+          activeOpacity={0.8}
+        >
           <Text style={styles.saveButtonText}>{t('categories.save_button')}</Text>
         </TouchableOpacity>
-
-        <View style={{ height: 32 }} />
       </ScrollView>
 
       {/* Custom Alert */}
@@ -223,48 +243,22 @@ export default function CreateCategoryScreen() {
         buttons={[{ text: 'OK', onPress: () => setAlertVisible(false) }]}
         onClose={() => setAlertVisible(false)}
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-    textAlign: 'center',
-  },
   content: {
     flex: 1,
   },
   previewSection: {
     alignItems: 'center',
     paddingVertical: 32,
-    backgroundColor: '#fff',
     marginBottom: 8,
   },
   previewIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -273,20 +267,20 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   previewName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
   section: {
-    backgroundColor: '#fff',
-    padding: 16,
+    padding: 20,
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 16,
   },
   typeContainer: {
     flexDirection: 'row',
@@ -298,31 +292,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  typeButtonActive: {
-    backgroundColor: '#8b5cf6',
   },
   typeText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  typeTextActive: {
-    color: '#fff',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#f9fafb',
     borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 14,
-    color: '#111827',
+    fontWeight: '700',
   },
   emojiGrid: {
     flexDirection: 'row',
@@ -334,13 +317,6 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: '#f3f4f6',
-  },
-  emojiButtonActive: {
-    backgroundColor: '#ddd6fe',
-    borderWidth: 2,
-    borderColor: '#8b5cf6',
   },
   emoji: {
     fontSize: 24,
@@ -351,9 +327,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   colorButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -361,27 +336,25 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   saveButton: {
-    backgroundColor: '#8b5cf6',
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginTop: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '900',
     color: '#fff',
+    letterSpacing: 0.5,
   },
 });

@@ -4,20 +4,23 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { Header } from '@/components/ui/header';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Colors, getRadius } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function EmergencyFundScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [expense, setExpense] = useState('5000000');
   const [months, setMonths] = useState('6');
   const [savings, setSavings] = useState('10000000');
@@ -27,21 +30,15 @@ export default function EmergencyFundScreen() {
   const progress = target > 0 ? (parseFloat(savings || '0') / target) * 100 : 0;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('emergency.header')}</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <Header title={t('emergency.header')} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, { borderRadius: getRadius(240, 'large'), backgroundColor: theme.tint, shadowColor: theme.tint }]}>
             <Text style={styles.resultLabel}>{t('emergency.target_amount')}</Text>
             <Text style={styles.resultValue}>Rp {target.toLocaleString('id-ID')}</Text>
             
@@ -65,82 +62,79 @@ export default function EmergencyFundScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('emergency.monthly_expense_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('emergency.monthly_expense_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={expense}
               onChangeText={setExpense}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('emergency.tenure_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('emergency.tenure_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={months}
               onChangeText={setMonths}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('emergency.current_savings_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('emergency.current_savings_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={savings}
               onChangeText={setSavings}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
-          <View style={styles.infoBox}>
-            <Ionicons name="shield-checkmark-outline" size={20} color="#10b981" />
-            <Text style={styles.infoText}>
+          <View style={[styles.infoBox, { 
+            backgroundColor: isDark ? theme.tint + '15' : theme.tint + '10',
+            borderRadius: getRadius(56, 'small')
+          }]}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={theme.tint} />
+            <Text style={[styles.infoText, { color: isDark ? '#94a3b8' : '#065f46' }]}>
               {t('emergency.info_text')}
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
   content: {
     flex: 1,
     padding: 20,
   },
   resultCard: {
-    backgroundColor: '#10b981',
     padding: 24,
-    borderRadius: 24,
     marginBottom: 32,
-    shadowColor: '#10b981',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
@@ -150,31 +144,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   resultValue: {
     fontSize: 28,
     color: '#fff',
-    fontWeight: '800',
+    fontWeight: '900',
     marginBottom: 16,
   },
   progressContainer: {
     height: 8,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 4,
+    borderRadius: 8,
     marginBottom: 8,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
     backgroundColor: '#fff',
-    borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 16,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   divider: {
     height: 1,
@@ -186,38 +180,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 4,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   detailValue: {
     fontSize: 14,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '800',
   },
   inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 12,
+    fontWeight: '800',
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1e293b',
+    fontWeight: '600',
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#ecfdf5',
     padding: 16,
-    borderRadius: 12,
     marginTop: 12,
     gap: 12,
     alignItems: 'center',
@@ -225,7 +216,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 12,
-    color: '#065f46',
     lineHeight: 18,
+    fontWeight: '600',
   },
 });

@@ -1,20 +1,22 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, useColorScheme as useNativeColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { storage, Category } from '@/lib/storage/storage-adapter';
 import { useTranslation } from 'react-i18next';
+import { Header } from '@/components/ui/header';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Colors, getRadius } from '@/constants/theme';
 
 export default function CategoriesScreen() {
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+  
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
 
   const loadCategories = async () => {
     try {
@@ -28,62 +30,82 @@ export default function CategoriesScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      loadCategories();
+    }, [])
+  );
+
   const filteredCategories = categories.filter(c => c.type === selectedType);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#111827" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('categories.header')}</Text>
-        <TouchableOpacity 
-          onPress={() => router.push('/categories/create')}
-          style={styles.addButton}
-        >
-          <Ionicons name="add" size={24} color="#8b5cf6" />
-        </TouchableOpacity>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <Header 
+        title={t('categories.header')} 
+        rightIcon="plus" 
+        onRightPress={() => router.push('/categories/create')} 
+      />
+
+      <View style={[styles.tabContainer, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
+        <View style={[styles.tabContent, { 
+          backgroundColor: isDark ? '#1a1a1a' : '#f1f5f9',
+          borderRadius: getRadius(48, 'small')
+        }]}>
+          <TouchableOpacity
+            style={[
+              styles.tab, 
+              selectedType === 'EXPENSE' && { backgroundColor: theme.tint, borderRadius: getRadius(40, 'small') }
+            ]}
+            onPress={() => setSelectedType('EXPENSE')}
+          >
+            <Text style={[
+              styles.tabText, 
+              { color: isDark ? '#94a3b8' : '#64748b' },
+              selectedType === 'EXPENSE' && { color: '#fff' }
+            ]}>
+              {t('dashboard.expense_label')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab, 
+              selectedType === 'INCOME' && { backgroundColor: theme.tint, borderRadius: getRadius(40, 'small') }
+            ]}
+            onPress={() => setSelectedType('INCOME')}
+          >
+            <Text style={[
+              styles.tabText, 
+              { color: isDark ? '#94a3b8' : '#64748b' },
+              selectedType === 'INCOME' && { color: '#fff' }
+            ]}>
+              {t('dashboard.income_label')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Type Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, selectedType === 'EXPENSE' && styles.tabActive]}
-          onPress={() => setSelectedType('EXPENSE')}
-        >
-          <Text style={[styles.tabText, selectedType === 'EXPENSE' && styles.tabTextActive]}>
-            {t('dashboard.expense_label')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedType === 'INCOME' && styles.tabActive]}
-          onPress={() => setSelectedType('INCOME')}
-        >
-          <Text style={[styles.tabText, selectedType === 'INCOME' && styles.tabTextActive]}>
-            {t('dashboard.income_label')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Categories List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#8b5cf6" />
+          <ActivityIndicator size="large" color={theme.tint} />
         </View>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           <View style={styles.categoriesGrid}>
             {filteredCategories.map((category) => (
               <TouchableOpacity
                 key={category.id}
-                style={styles.categoryCard}
+                style={[styles.categoryCard, { 
+                  backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                  borderRadius: getRadius(110, 'medium'),
+                  borderColor: theme.border,
+                  borderWidth: isDark ? 1 : 0
+                }]}
                 onPress={() => router.push(`/categories/edit?id=${category.id}`)}
               >
-                <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
+                <View style={[styles.categoryIcon, { backgroundColor: category.color + '20', borderRadius: getRadius(48, 'small') }]}>
                   <Text style={styles.categoryEmoji}>{category.icon}</Text>
                 </View>
-                <Text style={styles.categoryName} numberOfLines={1}>
+                <Text style={[styles.categoryName, { color: theme.text }]} numberOfLines={1}>
                   {category.name}
                 </Text>
               </TouchableOpacity>
@@ -92,72 +114,41 @@ export default function CategoriesScreen() {
 
           {filteredCategories.length === 0 && (
             <View style={styles.emptyState}>
-              <Ionicons name="pricetags-outline" size={64} color="#d1d5db" />
-              <Text style={styles.emptyText}>{t('categories.no_categories')}</Text>
-              <Text style={styles.emptySubtext}>
+              <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', borderRadius: getRadius(100, 'medium') }]}>
+                 <Ionicons name="pricetags-outline" size={48} color={isDark ? '#475569' : '#cbd5e1'} />
+              </View>
+              <Text style={[styles.emptyText, { color: theme.text }]}>{t('categories.no_categories')}</Text>
+              <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
                 {t('categories.add_instruction')}
               </Text>
             </View>
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9fafb',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-    flex: 1,
-    textAlign: 'center',
-  },
-  addButton: {
-    padding: 4,
-  },
   tabContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  tabContent: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    padding: 4,
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-  },
-  tabActive: {
-    backgroundColor: '#8b5cf6',
+    justifyContent: 'center',
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  tabTextActive: {
-    color: '#fff',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   content: {
     flex: 1,
@@ -170,55 +161,58 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 12,
+    padding: 14,
     gap: 12,
   },
   categoryCard: {
-    width: '30%',
+    width: '30.8%',
     aspectRatio: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   categoryEmoji: {
-    fontSize: 24,
+    fontSize: 26,
   },
   categoryName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#111827',
+    fontSize: 11,
+    fontWeight: '800',
     textAlign: 'center',
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    paddingVertical: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginTop: 16,
+    fontSize: 18,
+    fontWeight: '900',
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#9ca3af',
-    marginTop: 8,
+    fontWeight: '600',
     textAlign: 'center',
+    lineHeight: 20,
   },
 });

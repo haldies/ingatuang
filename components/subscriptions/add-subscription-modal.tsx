@@ -7,9 +7,9 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Animated,
-  Easing,
   StyleSheet,
+  Platform,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,7 @@ import { storage, type Subscription } from '@/lib/storage/storage-adapter';
 import { eventEmitter, EVENTS } from '@/lib/utils/events';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import { Colors, getRadius } from '@/constants/theme';
 
 interface AddSubscriptionModalProps {
   visible: boolean;
@@ -45,6 +46,10 @@ export function AddSubscriptionModal({
   subscription,
   onSuccess,
 }: AddSubscriptionModalProps) {
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [loading, setLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [showBillingCyclePicker, setShowBillingCyclePicker] = useState(false);
@@ -55,7 +60,7 @@ export function AddSubscriptionModal({
     startDate: new Date(),
     description: '',
     icon: 'calendar-outline',
-    color: '#3b82f6',
+    color: theme.tint,
     imageUri: '',
     iconType: 'icon' as 'icon' | 'image',
   });
@@ -69,7 +74,7 @@ export function AddSubscriptionModal({
         startDate: new Date(subscription.startDate),
         description: subscription.description || '',
         icon: subscription.icon || 'calendar-outline',
-        color: subscription.color || '#3b82f6',
+        color: subscription.color || theme.tint,
         imageUri: subscription.imageUri || '',
         iconType: subscription.iconType || 'icon',
       });
@@ -81,7 +86,7 @@ export function AddSubscriptionModal({
         startDate: new Date(),
         description: '',
         icon: 'calendar-outline',
-        color: '#3b82f6',
+        color: theme.tint,
         imageUri: '',
         iconType: 'icon',
       });
@@ -130,12 +135,11 @@ export function AddSubscriptionModal({
         startDate: new Date(),
         description: '',
         icon: 'calendar-outline',
-        color: '#3b82f6',
+        color: theme.tint,
         imageUri: '',
         iconType: 'icon',
       });
 
-      // Emit event to refresh transactions if new subscription was added
       if (!subscription) {
         eventEmitter.emit(EVENTS.TRANSACTION_ADDED);
       }
@@ -191,7 +195,7 @@ export function AddSubscriptionModal({
         ...formData,
         imageUri: result.assets[0].uri,
         iconType: 'image',
-        icon: '', // Clear icon if image is picked
+        icon: '', 
       });
     }
   };
@@ -206,46 +210,52 @@ export function AddSubscriptionModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
-          <TouchableOpacity onPress={onClose} className="p-1 w-10">
-            <Ionicons name="close" size={28} color="#6b7280" />
+        <View style={[styles.header, { borderBottomColor: isDark ? '#262626' : '#f1f5f9' }]}>
+          <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+            <Ionicons name="close" size={28} color={isDark ? '#94A3B8' : '#6b7280'} />
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
             {subscription ? 'Edit Langganan' : 'Tambah Langganan'}
           </Text>
-          <View className="w-10" />
+          <View style={{ width: 44 }} />
         </View>
 
-        <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* Icon/Image Preview */}
-          <View className="items-center mb-8">
-            <TouchableOpacity onPress={handlePickImage}>
+          <View style={styles.previewContainer}>
+            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
               {formData.iconType === 'image' && formData.imageUri ? (
-                <View className="w-24 h-24 rounded-3xl overflow-hidden shadow-lg border-2 border-white">
-                  <Image source={{ uri: formData.imageUri }} style={{ width: 96, height: 96 }} />
+                <View style={[styles.imageWrapper, { borderRadius: getRadius(240, 'large'), borderColor: isDark ? '#262626' : '#fff' }]}>
+                  <Image source={{ uri: formData.imageUri }} style={styles.previewImage} />
                 </View>
               ) : (
                 <View 
-                  className="w-24 h-24 rounded-3xl items-center justify-center shadow-lg border-2 border-white"
-                  style={{ backgroundColor: formData.color }}
+                  style={[
+                    styles.iconWrapper, 
+                    { 
+                      backgroundColor: formData.color,
+                      borderRadius: getRadius(240, 'large'),
+                      borderColor: isDark ? '#262626' : '#fff'
+                    }
+                  ]}
                 >
                   <Ionicons name={formData.icon as any} size={48} color="#fff" />
                 </View>
               )}
-              <View className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500 rounded-full items-center justify-center border-4 border-white shadow-sm">
+              <View style={[styles.cameraBadge, { backgroundColor: theme.tint, borderColor: isDark ? '#262626' : '#fff' }]}>
                 <Ionicons name="camera" size={18} color="#fff" />
               </View>
             </TouchableOpacity>
-            <Text className="text-xs font-medium text-gray-400 mt-4">Ketuk untuk ubah gambar</Text>
+            <Text style={styles.previewHint}>Ketuk untuk ubah gambar</Text>
           </View>
 
           {/* Brand Grid Selector */}
           {!subscription && (
-             <View className="mb-6">
-                <Text className="text-sm font-semibold text-gray-900 mb-4">Mulai Cepat dengan Brand</Text>
-                <View className="flex-row flex-wrap justify-between gap-y-4">
+             <View style={styles.section}>
+                <Text style={[styles.label, { color: theme.text }]}>Mulai Cepat dengan Brand</Text>
+                <View style={styles.brandGrid}>
                    {PRESET_BRANDS.map((brand) => (
                       <TouchableOpacity
                          key={brand.name}
@@ -256,32 +266,43 @@ export function AddSubscriptionModal({
                             color: brand.color,
                             amount: brand.defaultPrice,
                             iconType: 'icon',
-                            imageUri: '' // Clear image if brand is picked
+                            imageUri: '' 
                          })}
-                         style={{ width: '18%' }}
-                         className="items-center"
+                         style={styles.brandItem}
                       >
                          <View 
-                            className="w-12 h-12 rounded-xl items-center justify-center mb-1 shadow-sm"
-                            style={{ backgroundColor: brand.color }}
+                            style={[
+                                styles.brandIcon, 
+                                { 
+                                    backgroundColor: brand.color,
+                                    borderRadius: getRadius(120, 'small') 
+                                }
+                            ]}
                          >
                             <Ionicons name={brand.icon as any} size={24} color="#fff" />
                          </View>
-                         <Text className="text-[10px] font-medium text-gray-500 text-center" numberOfLines={1}>
+                         <Text style={styles.brandName} numberOfLines={1}>
                             {brand.name}
                          </Text>
                       </TouchableOpacity>
                    ))}
-                   {/* Custom Icon Placeholder or Picker if needed */}
                 </View>
              </View>
           )}
 
           {/* Name */}
-          <View className="mb-5">
-            <Text className="text-sm font-semibold text-gray-900 mb-2.5">Nama Langganan</Text>
+          <View style={styles.inputSection}>
+            <Text style={[styles.label, { color: theme.text }]}>Nama Langganan</Text>
             <TextInput
-              className="border border-gray-200 rounded-xl px-4 py-3 text-[15px] text-gray-900 bg-gray-50"
+              style={[
+                styles.input, 
+                { 
+                  backgroundColor: isDark ? '#1a1a1a' : '#f9fafb',
+                  borderColor: isDark ? '#262626' : '#e2e8f0',
+                  color: theme.text,
+                  borderRadius: getRadius(120, 'small') 
+                }
+              ]}
               value={formData.name}
               onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Netflix, Spotify, dll"
@@ -290,10 +311,18 @@ export function AddSubscriptionModal({
           </View>
 
           {/* Amount */}
-          <View className="mb-5">
-            <Text className="text-sm font-semibold text-gray-900 mb-2.5">Harga</Text>
+          <View style={styles.inputSection}>
+            <Text style={[styles.label, { color: theme.text }]}>Harga</Text>
             <TextInput
-              className="border border-gray-200 rounded-xl px-4 py-3 text-[15px] text-gray-900 bg-gray-50"
+              style={[
+                styles.input, 
+                { 
+                  backgroundColor: isDark ? '#1a1a1a' : '#f9fafb',
+                  borderColor: isDark ? '#262626' : '#e2e8f0',
+                  color: theme.text,
+                  borderRadius: getRadius(120, 'small') 
+                }
+              ]}
               value={formData.amount}
               onChangeText={(text) => setFormData({ ...formData, amount: text })}
               placeholder="50000"
@@ -303,28 +332,42 @@ export function AddSubscriptionModal({
           </View>
 
           {/* Billing Cycle & Start Date */}
-          <View className="flex-row gap-3">
-            <View className="flex-1 mb-5">
-              <Text className="text-sm font-semibold text-gray-900 mb-2.5">Siklus</Text>
+          <View style={styles.row}>
+            <View style={[styles.inputSection, { flex: 1 }]}>
+              <Text style={[styles.label, { color: theme.text }]}>Siklus</Text>
               <TouchableOpacity
-                className="flex-row items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
+                style={[
+                  styles.pickerBtn, 
+                  { 
+                    backgroundColor: isDark ? '#1a1a1a' : '#f9fafb',
+                    borderColor: isDark ? '#262626' : '#e2e8f0',
+                    borderRadius: getRadius(120, 'small') 
+                  }
+                ]}
                 onPress={() => setShowBillingCyclePicker(true)}
               >
                 <Ionicons name={selectedBillingCycle?.icon as any} size={18} color="#6b7280" />
-                <Text className="flex-1 text-[15px] text-gray-900">
+                <Text style={[styles.pickerText, { color: theme.text }]}>
                   {selectedBillingCycle?.label}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color="#6b7280" />
               </TouchableOpacity>
             </View>
-            <View className="flex-1 mb-5">
-              <Text className="text-sm font-semibold text-gray-900 mb-2.5">Tanggal Mulai</Text>
+            <View style={[styles.inputSection, { flex: 1 }]}>
+              <Text style={[styles.label, { color: theme.text }]}>Tanggal Mulai</Text>
               <TouchableOpacity
-                className="flex-row items-center gap-2 border border-gray-200 rounded-xl px-4 py-3 bg-gray-50"
+                style={[
+                  styles.pickerBtn, 
+                  { 
+                    backgroundColor: isDark ? '#1a1a1a' : '#f9fafb',
+                    borderColor: isDark ? '#262626' : '#e2e8f0',
+                    borderRadius: getRadius(120, 'small') 
+                  }
+                ]}
                 onPress={() => setShowCalendar(true)}
               >
                 <Ionicons name="calendar-outline" size={18} color="#6b7280" />
-                <Text className="flex-1 text-[15px] text-gray-900">
+                <Text style={[styles.pickerText, { color: theme.text }]}>
                   {formatDate(formData.startDate)}
                 </Text>
               </TouchableOpacity>
@@ -332,10 +375,19 @@ export function AddSubscriptionModal({
           </View>
 
           {/* Description */}
-          <View className="mb-5">
-            <Text className="text-sm font-semibold text-gray-900 mb-2.5">Deskripsi</Text>
+          <View style={styles.inputSection}>
+            <Text style={[styles.label, { color: theme.text }]}>Deskripsi</Text>
             <TextInput
-              className="border border-gray-200 rounded-xl px-4 py-3 text-[15px] text-gray-900 bg-gray-50 min-h-[100px] pt-3"
+              style={[
+                styles.input, 
+                styles.multilineInput,
+                { 
+                  backgroundColor: isDark ? '#1a1a1a' : '#f9fafb',
+                  borderColor: isDark ? '#262626' : '#e2e8f0',
+                  color: theme.text,
+                  borderRadius: getRadius(120, 'small') 
+                }
+              ]}
               value={formData.description}
               onChangeText={(text) => setFormData({ ...formData, description: text })}
               placeholder="Catatan tambahan..."
@@ -348,16 +400,21 @@ export function AddSubscriptionModal({
         </ScrollView>
 
         {/* Footer */}
-        <View className="flex-row gap-3 px-5 pt-4 pb-5 border-t border-gray-100 bg-white">
+        <View style={[styles.footer, { borderTopColor: isDark ? '#262626' : '#f1f5f9' }]}>
           <TouchableOpacity
-            className={`flex-1 flex-row items-center justify-center gap-2 py-4 rounded-xl bg-blue-500 ${
-              loading ? 'opacity-50' : ''
-            }`}
+            style={[
+              styles.submitBtn, 
+              { 
+                backgroundColor: theme.tint,
+                borderRadius: getRadius(120, 'small'),
+                opacity: loading ? 0.5 : 1
+              }
+            ]}
             onPress={handleSubmit}
             disabled={loading}
           >
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
-            <Text className="text-base font-semibold text-white">
+            <Text style={styles.submitBtnText}>
               {loading ? 'Menyimpan...' : subscription ? 'Perbarui' : 'Simpan'}
             </Text>
           </TouchableOpacity>
@@ -365,88 +422,129 @@ export function AddSubscriptionModal({
       </SafeAreaView>
 
       {/* Calendar Overlay */}
-      {showCalendar && (
-        <View style={StyleSheet.absoluteFill} className="z-50">
-          <Pressable
-            className="flex-1 bg-black/50 justify-end"
-            onPress={() => setShowCalendar(false)}
-          >
-            <Pressable className="bg-white rounded-t-[20px] p-5 pb-10" onPress={(e) => e.stopPropagation()}>
-              <View className="flex-row items-center justify-between mb-5">
-                <Text className="text-xl font-bold text-gray-900">Pilih Tanggal</Text>
-                <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                  <Ionicons name="close" size={28} color="#6b7280" />
-                </TouchableOpacity>
-              </View>
-              <Calendar
-                onDayPress={handleDateSelect}
-                markedDates={{
-                  [formData.startDate.toISOString().split('T')[0]]: {
-                    selected: true,
-                    selectedColor: '#3b82f6',
-                  },
-                }}
-                theme={{
-                  todayTextColor: '#3b82f6',
-                  selectedDayBackgroundColor: '#3b82f6',
-                  selectedDayTextColor: '#ffffff',
-                  arrowColor: '#3b82f6',
-                  textDayFontSize: 16,
-                  textMonthFontSize: 18,
-                  textDayHeaderFontSize: 14,
-                  textMonthFontWeight: '600',
-                }}
-              />
-            </Pressable>
+      <Modal visible={showCalendar} transparent animationType="fade">
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setShowCalendar(false)}
+        >
+          <Pressable style={[styles.sheetContent, { backgroundColor: isDark ? '#171717' : '#fff', borderTopLeftRadius: getRadius(200, 'large'), borderTopRightRadius: getRadius(200, 'large') }]} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.sheetHeader}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Pilih Tanggal</Text>
+              <TouchableOpacity onPress={() => setShowCalendar(false)}>
+                <Ionicons name="close" size={28} color={isDark ? '#94A3B8' : '#6b7280'} />
+              </TouchableOpacity>
+            </View>
+            <Calendar
+              onDayPress={handleDateSelect}
+              markedDates={{
+                [formData.startDate.toISOString().split('T')[0]]: {
+                  selected: true,
+                  selectedColor: theme.tint,
+                },
+              }}
+              theme={{
+                calendarBackground: isDark ? '#171717' : '#fff',
+                textSectionTitleColor: isDark ? '#94A3B8' : '#b6c1cd',
+                dayTextColor: isDark ? '#fff' : '#2d4150',
+                todayTextColor: theme.tint,
+                selectedDayBackgroundColor: theme.tint,
+                selectedDayTextColor: '#ffffff',
+                arrowColor: theme.tint,
+                monthTextColor: isDark ? '#fff' : '#2d4150',
+              }}
+            />
           </Pressable>
-        </View>
-      )}
+        </Pressable>
+      </Modal>
 
       {/* Billing Cycle Picker Overlay */}
-      {showBillingCyclePicker && (
-        <View style={StyleSheet.absoluteFill} className="z-50">
-          <Pressable
-            className="flex-1 bg-black/50 justify-end"
-            onPress={() => setShowBillingCyclePicker(false)}
-          >
-            <Pressable className="bg-white rounded-t-[20px]" onPress={(e) => e.stopPropagation()}>
-              <View className="flex-row items-center justify-between px-5 py-5 border-b border-gray-100">
-                <Text className="text-xl font-bold text-gray-900">Pilih Siklus Pembayaran</Text>
-                <TouchableOpacity onPress={() => setShowBillingCyclePicker(false)}>
-                  <Ionicons name="close" size={28} color="#6b7280" />
-                </TouchableOpacity>
-              </View>
-              <ScrollView 
-                className="px-5 py-3"
-                contentContainerStyle={{ paddingBottom: 40 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {billingCycles.map((cycle) => (
-                  <TouchableOpacity
-                    key={cycle.value}
-                    className={`flex-row items-center justify-between py-4 px-4 rounded-xl mb-2 ${
-                      formData.billingCycle === cycle.value 
-                        ? 'bg-blue-50 border border-blue-500' 
-                        : 'bg-gray-50'
-                    }`}
-                    onPress={() => handleBillingCycleSelect(cycle.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')}
-                  >
-                    <View className="flex-row items-center gap-3 flex-1">
-                      <View className="w-10 h-10 rounded-full items-center justify-center bg-blue-100">
-                        <Ionicons name={cycle.icon as any} size={20} color="#3b82f6" />
-                      </View>
-                      <Text className="text-base font-medium text-gray-900">{cycle.label}</Text>
+      <Modal visible={showBillingCyclePicker} transparent animationType="fade">
+        <Pressable
+          style={styles.overlay}
+          onPress={() => setShowBillingCyclePicker(false)}
+        >
+          <Pressable style={[styles.sheetContent, { backgroundColor: isDark ? '#171717' : '#fff', borderTopLeftRadius: getRadius(200, 'large'), borderTopRightRadius: getRadius(200, 'large') }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.sheetHeader, { borderBottomColor: isDark ? '#262626' : '#f1f5f9', borderBottomWidth: 1, paddingBottom: 16 }]}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>Pilih Siklus Pembayaran</Text>
+              <TouchableOpacity onPress={() => setShowBillingCyclePicker(false)}>
+                <Ionicons name="close" size={28} color={isDark ? '#94A3B8' : '#6b7280'} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView 
+              style={styles.cycleList}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {billingCycles.map((cycle) => (
+                <TouchableOpacity
+                  key={cycle.value}
+                  style={[
+                    styles.cycleItem,
+                    { backgroundColor: isDark ? '#1a1a1a' : '#f9fafb', borderRadius: getRadius(120, 'small') },
+                    formData.billingCycle === cycle.value && { backgroundColor: theme.tint + '10', borderColor: theme.tint, borderWidth: 1 }
+                  ]}
+                  onPress={() => handleBillingCycleSelect(cycle.value as 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY')}
+                >
+                  <View style={styles.cycleInfo}>
+                    <View style={[styles.cycleIcon, { backgroundColor: theme.tint + '20' }]}>
+                      <Ionicons name={cycle.icon as any} size={20} color={theme.tint} />
                     </View>
-                    {formData.billingCycle === cycle.value && (
-                      <Ionicons name="checkmark-circle" size={24} color="#3b82f6" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </Pressable>
+                    <Text style={[styles.cycleName, { color: theme.text }]}>{cycle.label}</Text>
+                  </View>
+                  {formData.billingCycle === cycle.value && (
+                    <Ionicons name="checkmark-circle" size={24} color={theme.tint} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </Pressable>
-        </View>
-      )}
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 20, 
+    paddingVertical: 12, 
+    borderBottomWidth: 1,
+  },
+  closeBtn: { width: 44, padding: 4 },
+  headerTitle: { fontSize: 20, fontWeight: '800' },
+  scroll: { flex: 1, padding: 20 },
+  previewContainer: { alignItems: 'center', marginBottom: 32 },
+  imageWrapper: { width: 96, height: 96, overflow: 'hidden', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, borderWidth: 2 },
+  previewImage: { width: 96, height: 96 },
+  iconWrapper: { width: 96, height: 96, alignItems: 'center', justifyContent: 'center', elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, borderWidth: 2 },
+  cameraBadge: { position: 'absolute', bottom: -2, right: -2, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 4, elevation: 4 },
+  previewHint: { fontSize: 12, fontWeight: '600', color: '#94a3b8', marginTop: 12 },
+  section: { marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: '700', marginBottom: 10 },
+  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' },
+  brandItem: { width: '18%', alignItems: 'center' },
+  brandIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', marginBottom: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  brandName: { fontSize: 10, fontWeight: '600', color: '#94a3b8', textAlign: 'center' },
+  inputSection: { marginBottom: 20 },
+  input: { paddingHorizontal: 16, paddingVertical: 12, fontSize: 15, borderWidth: 1 },
+  multilineInput: { minHeight: 100, paddingTop: 12 },
+  row: { flexDirection: 'row', gap: 12 },
+  pickerBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1 },
+  pickerText: { flex: 1, fontSize: 15 },
+  footer: { padding: 20, borderTopWidth: 1 },
+  submitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 },
+  submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheetContent: { padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  sheetTitle: { fontSize: 20, fontWeight: '800' },
+  cycleList: { marginTop: 12 },
+  cycleItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, marginBottom: 8 },
+  cycleInfo: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  cycleIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  cycleName: { fontSize: 16, fontWeight: '700' },
+});

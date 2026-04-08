@@ -15,6 +15,7 @@ import {
   Dimensions,
   LayoutAnimation,
   UIManager,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomAlert } from '@/components/ui/custom-alert';
@@ -37,11 +38,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 44) / 2;
 
-const WALLET_ICONS = ['wallet', 'card', 'cash', 'business', 'home', 'car', 'gift', 'heart', 'airplane', 'briefcase', 'book', 'cart', 'cafe', 'game-controller'];
-const WALLET_COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#6366f1', '#4b5563'];
-
 export default function BudgetingWalletScreen() {
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  
   const [activeTab, setActiveTab] = useState<'BUDGET' | 'WALLET'>('BUDGET');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,9 +56,6 @@ export default function BudgetingWalletScreen() {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [walletBalances, setWalletBalances] = useState<Record<string, number>>({});
   const [selectedWalletId, setSelectedWalletId] = useState<string>('default');
-  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
-  const [walletFormData, setWalletFormData] = useState({ name: '', icon: 'wallet', color: Colors.light.tint });
 
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertConfig, setAlertConfig] = useState<{
@@ -117,160 +115,317 @@ export default function BudgetingWalletScreen() {
     } catch (error) { showAlert({ title: 'Error', message: 'Gagal simpan', type: 'error' }); }
   };
 
-  const handleWalletSave = async () => {
-    if (!walletFormData.name.trim()) return;
-    try {
-      if (editingWallet) {
-        await storage.updateWallet(editingWallet.id, { name: walletFormData.name.trim(), icon: walletFormData.icon, color: walletFormData.color });
-      } else {
-        await storage.addWallet({ id: Date.now().toString(), name: walletFormData.name.trim(), icon: walletFormData.icon, color: walletFormData.color, createdAt: new Date().toISOString() });
-      }
-      setIsWalletModalOpen(false);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      loadData();
-    } catch (error) { console.error(error); }
-  };
-
   if (loading && !refreshing) {
     return (
       <ScreenWrapper>
-        <View style={styles.centered}><ActivityIndicator size="large" color={Colors.light.tint} /></View>
+        <View style={styles.centered}><ActivityIndicator size="large" color={theme.tint} /></View>
       </ScreenWrapper>
     );
   }
 
+  const handleAddPress = () => {
+    if (activeTab === 'BUDGET') {
+      setShowBudgetModal(true);
+    } else {
+      showAlert({ title: 'Tambah Dompet', message: 'Fitur tambah dompet ada di pengaturan akun.', type: 'info' });
+    }
+  };
+
   return (
-    <ScreenWrapper backgroundColor="#fff">
-      <View style={styles.header}>
-        <View style={styles.tabSwitcher}>
-            <TouchableOpacity style={[styles.tabBtn, activeTab === 'BUDGET' && styles.tabBtnActive]} onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveTab('BUDGET'); }}>
-              <Text style={[styles.tabText, activeTab === 'BUDGET' && styles.tabTextActive]}>Anggaran</Text>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <View style={[styles.header, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+        <View style={[styles.tabSwitcher, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9', borderRadius: getRadius(100, 'small') }]}>
+            <TouchableOpacity 
+              style={[
+                styles.tabBtn, 
+                activeTab === 'BUDGET' && [styles.tabBtnActive, { backgroundColor: theme.background }]
+              ]} 
+              onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveTab('BUDGET'); }}
+            >
+              <Text style={[styles.tabText, activeTab === 'BUDGET' && { color: theme.text }]}>Anggaran</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.tabBtn, activeTab === 'WALLET' && styles.tabBtnActive]} onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveTab('WALLET'); }}>
-              <Text style={[styles.tabText, activeTab === 'WALLET' && styles.tabTextActive]}>Dompet</Text>
+            <TouchableOpacity 
+              style={[
+                styles.tabBtn, 
+                activeTab === 'WALLET' && [styles.tabBtnActive, { backgroundColor: theme.background }]
+              ]} 
+              onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setActiveTab('WALLET'); }}
+            >
+              <Text style={[styles.tabText, activeTab === 'WALLET' && { color: theme.text }]}>Dompet</Text>
             </TouchableOpacity>
         </View>
-        <TouchableOpacity style={[styles.addIconBtn, { borderRadius: getRadius(44, 'small') }]} onPress={() => activeTab === 'BUDGET' ? setShowBudgetModal(true) : (setEditingWallet(null), setWalletFormData({ name: '', icon: 'wallet', color: Colors.light.tint }), setIsWalletModalOpen(true))}>
+        <TouchableOpacity 
+          style={[styles.addIconBtn, { backgroundColor: theme.tint, borderRadius: getRadius(70, 'small') }]} 
+          onPress={handleAddPress}
+        >
             <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={Colors.light.tint} />}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={theme.tint} />}
+      >
         {activeTab === 'BUDGET' ? (
           <>
-            <View style={[styles.summaryCard, { borderRadius: getRadius(150) }]}>
+            <View style={[
+              styles.summaryCard, 
+              { 
+                backgroundColor: colorScheme === 'dark' ? '#171717' : '#f8fafc',
+                borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                borderRadius: getRadius(150) 
+              }
+            ]}>
               <View style={styles.summaryInfo}>
                 <View>
                   <Text style={styles.summaryLabel}>TOTAL ANGGARAN</Text>
-                  <Text style={styles.summaryAmount}>{formatCurrency(budgetSummary?.totalBudget || 0)}</Text>
+                  <Text style={[styles.summaryAmount, { color: theme.text }]}>{formatCurrency(budgetSummary?.totalBudget || 0)}</Text>
                 </View>
-                <View style={styles.summaryBadge}><Text style={styles.badgeText}>{budgetSummary?.percentage.toFixed(0)}%</Text></View>
+                <View style={[styles.summaryBadge, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0' }]}>
+                  <Text style={[styles.badgeText, { color: theme.text }]}>{budgetSummary?.percentage.toFixed(0)}%</Text>
+                </View>
               </View>
-              <View style={[styles.progBar, { borderRadius: 4 }]}><View style={[styles.progFill, { width: `${Math.min(budgetSummary?.percentage || 0, 100)}%` }]} /></View>
+              <View style={[styles.progBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0', borderRadius: 4 }]}>
+                <View style={[styles.progFill, { backgroundColor: theme.tint, width: `${Math.min(budgetSummary?.percentage || 0, 100)}%` }]} />
+              </View>
               <View style={styles.summaryFooter}>
-                <View><Text style={styles.subLabel}>TERPAKAI</Text><Text style={styles.subAmount}>{formatCurrency(budgetSummary?.totalSpent || 0)}</Text></View>
-                <View style={{ alignItems: 'flex-end' }}><Text style={styles.subLabel}>SISA</Text><Text style={[styles.subAmount, { color: (budgetSummary?.remaining || 0) < 0 ? '#ef4444' : Colors.light.tint }]}>{formatCurrency(budgetSummary?.remaining || 0)}</Text></View>
+                <View><Text style={styles.subLabel}>TERPAKAI</Text><Text style={[styles.subAmount, { color: theme.text }]}>{formatCurrency(budgetSummary?.totalSpent || 0)}</Text></View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.subLabel}>SISA</Text>
+                  <Text style={[
+                    styles.subAmount, 
+                    { color: (budgetSummary?.remaining || 0) < 0 ? '#ef4444' : theme.tint }
+                  ]}>
+                    {formatCurrency(budgetSummary?.remaining || 0)}
+                  </Text>
+                </View>
               </View>
             </View>
+            
             <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>POST PENGELUARAN</Text></View>
+            
             {budgetSummary && budgetSummary.categories.length > 0 ? budgetSummary.categories.map((cat) => (
-              <View key={cat.categoryId} style={styles.budgetItem}>
-                <View style={[styles.catIconBox, { backgroundColor: cat.categoryColor + '10', borderRadius: getRadius(48) }]}><Text style={styles.catEmoji}>{cat.categoryIcon}</Text></View>
+              <View key={cat.categoryId} style={[styles.budgetItem, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                <View style={[
+                  styles.catIconBox, 
+                  { 
+                    backgroundColor: cat.categoryColor + '15', 
+                    borderRadius: getRadius(48) 
+                  }
+                ]}>
+                  <Text style={styles.catEmoji}>{cat.categoryIcon}</Text>
+                </View>
                 <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Text style={styles.itemName}>{cat.categoryName}</Text>
+                  <Text style={[styles.itemName, { color: theme.text }]}>{cat.categoryName}</Text>
                   <Text style={styles.itemLimit}>{formatCurrency(cat.spent)} / {formatCurrency(cat.budget)}</Text>
-                  <View style={styles.itemProgBar}><View style={[styles.itemProgFill, { width: `${Math.min(cat.percentage, 100)}%`, backgroundColor: cat.percentage > 90 ? '#ef4444' : Colors.light.tint }]} /></View>
+                  <View style={[styles.itemProgBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                    <View style={[
+                      styles.itemProgFill, 
+                      { 
+                        width: `${Math.min(cat.percentage, 100)}%`, 
+                        backgroundColor: cat.percentage > 90 ? '#ef4444' : theme.tint 
+                      }
+                    ]} />
+                  </View>
                 </View>
               </View>
-            )) : <View style={styles.emptyContainer}><Ionicons name="pie-chart-outline" size={48} color="#f1f5f9" /><Text style={styles.emptyText}>Belum ada anggaran</Text></View>}
+            )) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="pie-chart-outline" size={48} color={colorScheme === 'dark' ? '#262626' : '#f1f5f9'} />
+                <Text style={styles.emptyText}>Belum ada anggaran</Text>
+              </View>
+            )}
           </>
         ) : (
           <View style={styles.walletGrid}>
             {wallets.map((wallet) => (
-              <TouchableOpacity key={wallet.id} onPress={() => { storage.setSelectedWalletId(wallet.id); setSelectedWalletId(wallet.id); LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); }} activeOpacity={0.9} style={[styles.walletCard, { borderRadius: getRadius(130) }, selectedWalletId === wallet.id && { backgroundColor: wallet.color, borderColor: wallet.color }]}>
+              <TouchableOpacity 
+                key={wallet.id} 
+                onPress={() => { 
+                  storage.setSelectedWalletId(wallet.id); 
+                  setSelectedWalletId(wallet.id); 
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); 
+                }} 
+                activeOpacity={0.9} 
+                style={[
+                  styles.walletCard, 
+                  { 
+                    backgroundColor: theme.background,
+                    borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                    borderRadius: getRadius(130) 
+                  }, 
+                  selectedWalletId === wallet.id && { backgroundColor: wallet.color, borderColor: wallet.color }
+                ]}
+              >
                 <View style={styles.cardHeader}>
-                  <View style={[styles.walletIconBox, { backgroundColor: selectedWalletId === wallet.id ? 'rgba(255,255,255,0.2)' : wallet.color + '15', borderRadius: getRadius(44) }]}><Ionicons name={wallet.icon as any} size={22} color={selectedWalletId === wallet.id ? '#fff' : wallet.color} /></View>
-                  {selectedWalletId === wallet.id ? <View style={styles.activePill}><Ionicons name="checkmark-circle" size={12} color={wallet.color} /><Text style={[styles.activeText, { color: wallet.color }]}>AKTIF</Text></View> : <TouchableOpacity onPress={() => { setEditingWallet(wallet); setWalletFormData({ name: wallet.name, icon: wallet.icon, color: wallet.color }); setIsWalletModalOpen(true); }}><Ionicons name="ellipsis-horizontal" size={20} color="#cbd5e1" /></TouchableOpacity>}
+                  <View style={[
+                    styles.walletIconBox, 
+                    { 
+                      backgroundColor: selectedWalletId === wallet.id ? 'rgba(255,255,255,0.2)' : wallet.color + '15', 
+                      borderRadius: getRadius(44) 
+                    }
+                  ]}>
+                    <Ionicons 
+                      name={wallet.icon as any} 
+                      size={22} 
+                      color={selectedWalletId === wallet.id ? '#fff' : wallet.color} 
+                    />
+                  </View>
+                  {selectedWalletId === wallet.id ? (
+                    <View style={[styles.activePill, { borderRadius: getRadius(40, 'small') }]}>
+                      <Ionicons name="checkmark-circle" size={12} color={wallet.color} />
+                      <Text style={[styles.activeText, { color: wallet.color }]}>AKTIF</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="ellipsis-horizontal" size={20} color="#cbd5e1" />
+                  )}
                 </View>
-                <Text style={[styles.walletName, selectedWalletId === wallet.id && { color: '#fff' }]}>{wallet.name}</Text>
-                <Text style={[styles.balAmount, selectedWalletId === wallet.id && { color: '#fff' }]}>{formatCurrency(walletBalances[wallet.id] || 0)}</Text>
+                <Text style={[styles.walletName, { color: theme.text }, selectedWalletId === wallet.id && { color: '#fff' }]}>{wallet.name}</Text>
+                <Text style={[styles.balAmount, { color: theme.text }, selectedWalletId === wallet.id && { color: '#fff' }]}>{formatCurrency(walletBalances[wallet.id] || 0)}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
       </ScrollView>
 
-      {/* Simplified Modal Logic */}
-      <Modal visible={showBudgetModal} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowBudgetModal(false)}>
+      {/* Budget Modal */}
+      <Modal visible={showBudgetModal} transparent animationType="slide" onRequestClose={() => setShowBudgetModal(false)}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalOverlay} onPress={() => setShowBudgetModal(false)} />
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.modalWrap}>
-            <View style={[styles.modalSheet, { borderTopLeftRadius: getRadius(400, 'large'), borderTopRightRadius: getRadius(400, 'large') }]}>
-              <View style={styles.modalHeader}><Text style={styles.modalTitle}>Atur Anggaran</Text><TouchableOpacity onPress={() => setShowBudgetModal(false)}><Ionicons name="close" size={24} color="#0f172a" /></TouchableOpacity></View>
+            <View style={[
+              styles.modalSheet, 
+              { 
+                backgroundColor: theme.background,
+                borderTopLeftRadius: getRadius(400, 'large'), 
+                borderTopRightRadius: getRadius(400, 'large') 
+              }
+            ]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Atur Anggaran</Text>
+                <TouchableOpacity onPress={() => setShowBudgetModal(false)}>
+                  <Ionicons name="close" size={24} color={theme.text} />
+                </TouchableOpacity>
+              </View>
               <View style={styles.modalBody}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                  {categories.map(cat => <TouchableOpacity key={cat.id} style={[styles.catChip, { borderRadius: getRadius(44) }, selectedCategory === cat.id && { backgroundColor: Colors.light.tint }]} onPress={() => setSelectedCategory(cat.id)}><Text style={[styles.catLabel, selectedCategory === cat.id && { color: '#fff' }]}>{cat.icon} {cat.name}</Text></TouchableOpacity>)}
+                  {categories.map(cat => (
+                    <TouchableOpacity 
+                      key={cat.id} 
+                      style={[
+                        styles.catChip, 
+                        { 
+                          backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                          borderRadius: getRadius(44) 
+                        }, 
+                        selectedCategory === cat.id && { backgroundColor: theme.tint }
+                      ]} 
+                      onPress={() => setSelectedCategory(cat.id)}
+                    >
+                      <Text style={[styles.catLabel, selectedCategory === cat.id && { color: '#fff' }]}>{cat.icon} {cat.name}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </ScrollView>
-                <TextInput style={[styles.input, { borderRadius: getRadius(56) }]} placeholder="Jumlah Anggaran" keyboardType="numeric" value={budgetAmount} onChangeText={setBudgetAmount} />
-                <TouchableOpacity style={[styles.saveBtn, { backgroundColor: Colors.light.tint, borderRadius: getRadius(56) }]} onPress={handleSetBudget}><Text style={styles.saveBtnText}>Simpan</Text></TouchableOpacity>
+                <TextInput 
+                  style={[
+                    styles.input, 
+                    { 
+                      backgroundColor: colorScheme === 'dark' ? '#171717' : '#f8fafc',
+                      borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                      color: theme.text,
+                      borderRadius: getRadius(56) 
+                    }
+                  ]} 
+                  placeholder="Jumlah Anggaran" 
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="numeric" 
+                  value={budgetAmount} 
+                  onChangeText={setBudgetAmount} 
+                />
+                <TouchableOpacity 
+                  style={[styles.saveBtn, { backgroundColor: theme.tint, borderRadius: getRadius(56) }]} 
+                  onPress={handleSetBudget}
+                >
+                  <Text style={styles.saveBtnText}>Simpan</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </KeyboardAvoidingView>
-        </Pressable>
+        </View>
       </Modal>
 
-      <CustomAlert visible={alertVisible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} buttons={alertConfig.buttons} onClose={() => setAlertVisible(false)} />
+      <CustomAlert 
+        visible={alertVisible} 
+        title={alertConfig.title} 
+        message={alertConfig.message} 
+        type={alertConfig.type} 
+        buttons={alertConfig.buttons} 
+        onClose={() => setAlertVisible(false)} 
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, gap: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  tabSwitcher: { flex: 1, flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 16, padding: 4 },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    paddingVertical: 12, 
+    gap: 12, 
+    borderBottomWidth: 1 
+  },
+  tabSwitcher: { flex: 1, flexDirection: 'row', padding: 4 },
   tabBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 12 },
-  tabBtnActive: { backgroundColor: '#fff', elevation: 2, shadowOpacity: 0.1 },
+  tabBtnActive: { 
+    elevation: 2, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4 
+  },
   tabText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
-  tabTextActive: { color: '#0f172a' },
-  addIconBtn: { width: 44, height: 44, backgroundColor: Colors.light.tint, alignItems: 'center', justifyContent: 'center' },
+  addIconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingVertical: 16, paddingBottom: 100 },
-  summaryCard: { marginHorizontal: 20, padding: 24, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9', marginBottom: 24 },
+  summaryCard: { marginHorizontal: 20, padding: 24, borderWidth: 1, marginBottom: 24 },
   summaryInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   summaryLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', letterSpacing: 1 },
-  summaryAmount: { fontSize: 26, fontWeight: '900', color: '#0f172a' },
-  summaryBadge: { paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#e2e8f0', borderRadius: 6 },
+  summaryAmount: { fontSize: 26, fontWeight: '900' },
+  summaryBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   badgeText: { fontSize: 12, fontWeight: '800' },
-  progBar: { height: 8, backgroundColor: '#e2e8f0', overflow: 'hidden', marginBottom: 16 },
-  progFill: { height: '100%', backgroundColor: '#0f172a' },
+  progBar: { height: 8, overflow: 'hidden', marginBottom: 16 },
+  progFill: { height: '100%' },
   summaryFooter: { flexDirection: 'row', justifyContent: 'space-between' },
   subLabel: { fontSize: 9, fontWeight: '700', color: '#94a3b8' },
-  subAmount: { fontSize: 14, fontWeight: '800', color: '#475569' },
+  subAmount: { fontSize: 14, fontWeight: '800' },
   sectionHeader: { paddingHorizontal: 24, marginBottom: 16 },
   sectionTitle: { fontSize: 11, fontWeight: '900', color: '#94a3b8', letterSpacing: 1 },
-  budgetItem: { marginHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  budgetItem: { marginHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1 },
   catIconBox: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   catEmoji: { fontSize: 22 },
-  itemName: { fontSize: 15, fontWeight: '800', color: '#1e293b' },
+  itemName: { fontSize: 15, fontWeight: '800' },
   itemLimit: { fontSize: 12, color: '#64748b', fontWeight: '500', marginBottom: 8 },
-  itemProgBar: { height: 6, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden' },
+  itemProgBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
   itemProgFill: { height: '100%', borderRadius: 3 },
   walletGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, justifyContent: 'space-between' },
-  walletCard: { width: CARD_WIDTH, backgroundColor: '#fff', padding: 20, marginBottom: 16, borderWidth: 1.5, borderColor: '#f1f5f9' },
+  walletCard: { width: CARD_WIDTH, padding: 20, marginBottom: 16, borderWidth: 1.5 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   walletIconBox: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  activePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 20, gap: 4 },
+  activePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
   activeText: { fontSize: 8, fontWeight: '900' },
-  walletName: { fontSize: 15, fontWeight: '800', color: '#1e293b', marginBottom: 4 },
-  balAmount: { fontSize: 18, fontWeight: '900', color: '#0f172a' },
+  walletName: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  balAmount: { fontSize: 18, fontWeight: '900' },
   emptyContainer: { padding: 60, alignItems: 'center' },
   emptyText: { fontSize: 13, color: '#94a3b8', marginTop: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalWrap: { width: '100%' },
-  modalSheet: { backgroundColor: '#fff', paddingBottom: 40 },
-  modalHeader: { padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  modalSheet: { paddingBottom: 40 },
+  modalHeader: { padding: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1 },
   modalTitle: { fontSize: 18, fontWeight: '900' },
   modalBody: { padding: 24 },
-  input: { backgroundColor: '#f8fafc', padding: 16, fontSize: 16, color: '#0f172a', borderWidth: 1, borderColor: '#f1f5f9', marginBottom: 20 },
-  catChip: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#f1f5f9', marginRight: 8 },
+  input: { padding: 16, fontSize: 16, borderWidth: 1, marginBottom: 20 },
+  catChip: { paddingHorizontal: 16, paddingVertical: 10, marginRight: 8 },
   catLabel: { fontSize: 14, fontWeight: '700', color: '#64748b' },
   saveBtn: { paddingVertical: 16, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },

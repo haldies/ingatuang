@@ -4,19 +4,23 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Header } from '@/components/ui/header';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { useTranslation } from 'react-i18next';
+import { Colors, getRadius } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function EducationFundScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [currentCost, setCurrentCost] = useState('100000000');
   const [inflation, setInflation] = useState('6');
   const [yearsUntilNeeded, setYearsUntilNeeded] = useState('10');
@@ -35,21 +39,15 @@ export default function EducationFundScreen() {
   const monthlySavingsNeeded = futureCost / (parseFloat(yearsUntilNeeded) * 12 || 1);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#374151" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('education.header')}</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <Header title={t('education.header')} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.resultCard}>
+          <View style={[styles.resultCard, { borderRadius: getRadius(240, 'large'), backgroundColor: theme.tint, shadowColor: theme.tint }]}>
             <Text style={styles.resultLabel}>{t('education.future_cost')}</Text>
             <Text style={styles.resultValue}>Rp {futureCost.toLocaleString('id-ID')}</Text>
             
@@ -68,82 +66,79 @@ export default function EducationFundScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('education.current_cost_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('education.current_cost_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={currentCost}
               onChangeText={setCurrentCost}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('education.inflation_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('education.inflation_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={inflation}
               onChangeText={setInflation}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>{t('education.years_until_label')}</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>{t('education.years_until_label')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#e2e8f0',
+                color: theme.text,
+                borderRadius: getRadius(56, 'small')
+              }]}
               value={yearsUntilNeeded}
               onChangeText={setYearsUntilNeeded}
               keyboardType="numeric"
               placeholder="0"
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
             />
           </View>
 
-          <View style={styles.infoBox}>
-            <Ionicons name="school-outline" size={20} color="#a855f7" />
-            <Text style={styles.infoText}>
+          <View style={[styles.infoBox, { 
+            backgroundColor: isDark ? theme.tint + '15' : theme.tint + '10',
+            borderRadius: getRadius(56, 'small')
+          }]}>
+            <Ionicons name="school-outline" size={20} color={theme.tint} />
+            <Text style={[styles.infoText, { color: isDark ? '#94a3b8' : '#6b21a8' }]}>
               {t('education.info_text')}
             </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
   content: {
     flex: 1,
     padding: 20,
   },
   resultCard: {
-    backgroundColor: '#a855f7',
     padding: 24,
-    borderRadius: 24,
     marginBottom: 32,
-    shadowColor: '#a855f7',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 20,
@@ -153,12 +148,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   resultValue: {
     fontSize: 28,
     color: '#fff',
-    fontWeight: '800',
+    fontWeight: '900',
     marginBottom: 16,
   },
   divider: {
@@ -171,38 +167,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   detailLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255, 255, 255, 0.7)',
     marginBottom: 4,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   detailValue: {
     fontSize: 14,
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '800',
   },
   inputGroup: {
     marginBottom: 20,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#475569',
+    fontSize: 12,
+    fontWeight: '800',
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1e293b',
+    fontWeight: '600',
   },
   infoBox: {
     flexDirection: 'row',
-    backgroundColor: '#f3e8ff',
     padding: 16,
-    borderRadius: 12,
     marginTop: 12,
     gap: 12,
     alignItems: 'center',
@@ -210,7 +203,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 12,
-    color: '#6b21a8',
     lineHeight: 18,
+    fontWeight: '600',
   },
 });

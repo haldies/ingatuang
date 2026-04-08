@@ -7,6 +7,7 @@ import {
   RefreshControl,
   FlatList,
   TouchableOpacity,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Header } from '@/components/ui/header';
@@ -17,8 +18,13 @@ import { SubscriptionStatsComponent } from '@/components/subscriptions/subscript
 import { SubscriptionItemMemo } from '@/components/subscriptions/subscription-item-memo';
 import { AddSubscriptionModal } from '@/components/subscriptions/add-subscription-modal';
 import { sendLocalNotification } from '@/lib/utils/notifications';
+import { Colors, getRadius } from '@/constants/theme';
 
 export default function SubscriptionsScreen() {
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [stats, setStats] = useState<SubscriptionStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,22 +99,22 @@ export default function SubscriptionsScreen() {
 
   if (loading && !refreshing) {
     return (
-      <ScreenWrapper>
+      <ScreenWrapper backgroundColor={theme.background}>
         <Header title="Langganan" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={theme.tint} />
         </View>
       </ScreenWrapper>
     );
   }
 
   return (
-    <ScreenWrapper backgroundColor="#f9fafb">
+    <ScreenWrapper backgroundColor={theme.background}>
       <Header 
         title="Langganan" 
         rightAction={
           <TouchableOpacity onPress={handleAddNew} style={styles.addButtonMini}>
-            <Ionicons name="add" size={28} color="#3b82f6" />
+            <Ionicons name="add" size={28} color={theme.tint} />
           </TouchableOpacity>
         }
       />
@@ -123,20 +129,20 @@ export default function SubscriptionsScreen() {
           <>
             {stats && <View style={styles.statsContainer}><SubscriptionStatsComponent stats={stats} /></View>}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Daftar Langganan</Text>
-              <TouchableOpacity style={styles.testButton} onPress={handleTestNotification}>
-                <Ionicons name="notifications-outline" size={14} color="#3b82f6" />
-                <Text style={styles.testButtonText}>Cek Notif</Text>
+              <Text style={[styles.sectionTitle, { color: isDark ? '#94A3B8' : '#6b7280' }]}>Daftar Langganan</Text>
+              <TouchableOpacity style={[styles.testButton, { backgroundColor: theme.tint + '15', borderRadius: getRadius(80, 'small') }]} onPress={handleTestNotification}>
+                <Ionicons name="notifications-outline" size={14} color={theme.tint} />
+                <Text style={[styles.testButtonText, { color: theme.tint }]}>Cek Notif</Text>
               </TouchableOpacity>
             </View>
           </>
         }
         contentContainerStyle={{ paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor={theme.tint} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Feather name="calendar" size={48} color="#cbd5e1" />
-            <Text style={styles.emptyText}>Belum ada langganan. Tambahkan sekarang!</Text>
+            <Feather name="calendar" size={48} color={isDark ? '#262626' : '#cbd5e1'} />
+            <Text style={[styles.emptyText, { color: isDark ? '#404040' : '#64748b' }]}>Belum ada langganan. Tambahkan sekarang!</Text>
           </View>
         }
       />
@@ -165,9 +171,9 @@ const styles = StyleSheet.create({
   addButtonMini: { padding: 4 },
   statsContainer: { padding: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  sectionTitle: { fontSize: 12, fontWeight: '600', color: '#6b7280' },
-  testButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#eff6ff', borderRadius: 8 },
-  testButtonText: { fontSize: 12, fontWeight: '600', color: '#3b82f6' },
+  sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  testButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6 },
+  testButtonText: { fontSize: 12, fontWeight: '800' },
   emptyContainer: { alignItems: 'center', marginTop: 100 },
-  emptyText: { marginTop: 16, color: '#64748b', fontSize: 14 },
+  emptyText: { marginTop: 16, fontSize: 14, fontWeight: '600' },
 });

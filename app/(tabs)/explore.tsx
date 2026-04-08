@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Pressable,
   Platform,
   RefreshControl,
+  useColorScheme as useNativeColorScheme
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,9 @@ import { Colors, getRadius } from '@/constants/theme';
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timeRange, setTimeRange] = useState<'WEEKLY' | 'MONTHLY' | 'ANNUALLY' | 'CUSTOM'>('MONTHLY');
   const [customRange, setCustomRange] = useState<{ start: Date; end: Date }>({
@@ -91,7 +95,7 @@ export default function StatsScreen() {
         endDate.setHours(23, 59, 59, 999);
       } else if (timeRange === 'ANNUALLY') {
         startDate = new Date(currentDate.getFullYear(), 0, 1);
-        endDate = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59, 999);
+        endDate = new Date(currentDate.getFullYear(), currentDate.getFullYear(), 31, 23, 59, 59, 999);
       } else if (timeRange === 'CUSTOM') {
         startDate = customRange.start;
         endDate = customRange.end;
@@ -147,86 +151,219 @@ export default function StatsScreen() {
     return (
       <ScreenWrapper>
         <Header title="Statistik & Analisa" hideBack />
-        <View style={styles.loadingContainer}><ActivityIndicator size="large" color={Colors.light.tint} /></View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.tint} />
+        </View>
       </ScreenWrapper>
     );
   }
 
   return (
-    <ScreenWrapper backgroundColor="#fff">
+    <ScreenWrapper backgroundColor={theme.background}>
       <Header title="Statistik & Analisa" hideBack />
       
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} tintColor={Colors.light.tint} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={loadData} 
+            tintColor={theme.tint} 
+          />
+        }
       >
-        <View style={styles.monthNav}>
-          <TouchableOpacity onPress={goToPrevious} style={styles.navBtn}><Ionicons name="chevron-back" size={20} color="#0f172a" /></TouchableOpacity>
-          <View style={styles.monthContent}><Text style={styles.monthText}>{getRangeLabels()}</Text></View>
+        <View style={[
+          styles.monthNav, 
+          { 
+            backgroundColor: theme.background,
+            borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9'
+          }
+        ]}>
+          <TouchableOpacity onPress={goToPrevious} style={styles.navBtn}>
+            <Ionicons name="chevron-back" size={20} color={theme.text} />
+          </TouchableOpacity>
+          <View style={styles.monthContent}>
+            <Text style={[styles.monthText, { color: theme.text }]}>{getRangeLabels()}</Text>
+          </View>
           <View style={styles.navRightGroup}>
-            <TouchableOpacity onPress={goToNext} style={styles.navBtn}><Ionicons name="chevron-forward" size={20} color="#0f172a" /></TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.filterBtn, isRangeDropdownOpen && styles.filterBtnActive]}
-              onPress={() => setIsRangeDropdownOpen(!isRangeDropdownOpen)}
-            >
-              <Ionicons name="options" size={18} color="#0f172a" />
+            <TouchableOpacity onPress={goToNext} style={styles.navBtn}>
+              <Ionicons name="chevron-forward" size={20} color={theme.text} />
+            </TouchableOpacity>
+            <View>
+              <TouchableOpacity 
+                style={[
+                  styles.filterBtn, 
+                  isRangeDropdownOpen && { backgroundColor: theme.tint + '15', borderRadius: 8 }
+                ]}
+                onPress={() => setIsRangeDropdownOpen(!isRangeDropdownOpen)}
+              >
+                <Ionicons name="options" size={18} color={theme.text} />
+              </TouchableOpacity>
+              
               {isRangeDropdownOpen && (
-                <View style={[styles.inlineDropdown, { borderRadius: getRadius(170, 'medium') }]}>
+                <View style={[
+                  styles.inlineDropdown, 
+                  { 
+                    backgroundColor: theme.background,
+                    borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                    borderRadius: getRadius(170, 'medium') 
+                  }
+                ]}>
                   {[
                     { id: 'WEEKLY', label: 'Mingguan', icon: 'calendar-outline' },
                     { id: 'MONTHLY', label: 'Bulanan', icon: 'calendar' },
                     { id: 'ANNUALLY', label: 'Tahunan', icon: 'business-outline' },
                     { id: 'CUSTOM', label: 'Kustom', icon: 'create-outline' }
                   ].map((item) => (
-                    <TouchableOpacity key={item.id} style={[styles.inlineMenuItem, timeRange === item.id && styles.inlineMenuItemActive]} onPress={() => { if (item.id === 'CUSTOM') { setIsRangeDropdownOpen(false); setShowCustomRangeModal(true); } else { setTimeRange(item.id as any); setIsRangeDropdownOpen(false); } }}>
+                    <TouchableOpacity 
+                      key={item.id} 
+                      style={[
+                        styles.inlineMenuItem, 
+                        timeRange === item.id && { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }
+                      ]} 
+                      onPress={() => { 
+                        if (item.id === 'CUSTOM') { 
+                          setIsRangeDropdownOpen(false); 
+                          setShowCustomRangeModal(true); 
+                        } else { 
+                          setTimeRange(item.id as any); 
+                          setIsRangeDropdownOpen(false); 
+                        } 
+                      }}
+                    >
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Ionicons name={item.icon as any} size={16} color={timeRange === item.id ? Colors.light.tint : '#64748b'} />
-                        <Text style={[styles.inlineMenuText, timeRange === item.id && styles.inlineMenuTextActive]}>{item.label}</Text>
+                        <Ionicons 
+                          name={item.icon as any} 
+                          size={16} 
+                          color={timeRange === item.id ? theme.tint : '#64748b'} 
+                        />
+                        <Text style={[
+                          styles.inlineMenuText, 
+                          timeRange === item.id && { color: theme.tint, fontWeight: '700' }
+                        ]}>
+                          {item.label}
+                        </Text>
                       </View>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
-            </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        <View style={styles.tabContainer}>
-          <TouchableOpacity style={[styles.tab, activeTab === 'EXPENSE' && styles.tabActive]} onPress={() => setActiveTab('EXPENSE')}>
-            <Ionicons name="arrow-down" size={12} color={activeTab === 'EXPENSE' ? Colors.light.tint : '#94a3b8'} />
-            <Text style={[styles.tabText, activeTab === 'EXPENSE' && styles.tabTextActive]}>Pengeluaran</Text>
+        <View style={[styles.tabContainer, { backgroundColor: theme.background }]}>
+          <TouchableOpacity 
+            style={[
+              styles.tab, 
+              { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc', borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9' },
+              activeTab === 'EXPENSE' && { backgroundColor: theme.background, borderColor: theme.tint, borderWidth: 1.5 }
+            ]} 
+            onPress={() => setActiveTab('EXPENSE')}
+          >
+            <Ionicons name="arrow-down" size={12} color={activeTab === 'EXPENSE' ? theme.tint : '#94a3b8'} />
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'EXPENSE' && { color: theme.tint, fontWeight: '700' }
+            ]}>
+              Pengeluaran
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.tab, activeTab === 'INCOME' && styles.tabActive]} onPress={() => setActiveTab('INCOME')}>
-            <Ionicons name="arrow-up" size={12} color={activeTab === 'INCOME' ? Colors.light.tint : '#94a3b8'} />
-            <Text style={[styles.tabText, activeTab === 'INCOME' && styles.tabTextActive]}>Pemasukan</Text>
+          <TouchableOpacity 
+            style={[
+              styles.tab, 
+              { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc', borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9' },
+              activeTab === 'INCOME' && { backgroundColor: theme.background, borderColor: theme.tint, borderWidth: 1.5 }
+            ]} 
+            onPress={() => setActiveTab('INCOME')}
+          >
+            <Ionicons name="arrow-up" size={12} color={activeTab === 'INCOME' ? theme.tint : '#94a3b8'} />
+            <Text style={[
+              styles.tabText, 
+              activeTab === 'INCOME' && { color: theme.tint, fontWeight: '700' }
+            ]}>
+              Pemasukan
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.totalCard, { borderRadius: getRadius(100) }]}>
+        <View style={[
+          styles.totalCard, 
+          { 
+            backgroundColor: theme.background, 
+            borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+            borderRadius: getRadius(100) 
+          }
+        ]}>
           <Text style={styles.totalLabel}>ESTIMASI TOTAL {activeTab === 'EXPENSE' ? 'PENGELUARAN' : 'PEMASUKAN'}</Text>
-          <Text style={styles.totalAmount}>{formatCurrency(totalAmount)}</Text>
+          <Text style={[styles.totalAmount, { color: theme.text }]}>{formatCurrency(totalAmount)}</Text>
         </View>
 
         {categoryData.length > 0 ? (
-          <View style={[styles.chartCard, { borderRadius: getRadius(220) }]}>
+          <View style={[
+            styles.chartCard, 
+            { 
+              backgroundColor: theme.background,
+              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderRadius: getRadius(220) 
+            }
+          ]}>
             <PieChart data={categoryData} />
           </View>
         ) : (
-          <View style={[styles.emptyCard, { borderRadius: getRadius(150) }]}><Ionicons name="layers-outline" size={40} color="#e2e8f0" /><Text style={styles.emptyText}>Tidak ada aktivitas finansial</Text></View>
+          <View style={[
+            styles.emptyCard, 
+            { 
+              backgroundColor: theme.background,
+              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderRadius: getRadius(150) 
+            }
+          ]}>
+            <Ionicons name="layers-outline" size={40} color={colorScheme === 'dark' ? '#262626' : '#e2e8f0'} />
+            <Text style={styles.emptyText}>Tidak ada aktivitas finansial</Text>
+          </View>
         )}
 
         {categoryData.length > 0 && (
-          <View style={[styles.categoryCard, { borderRadius: getRadius(200) }]}>
-            <View style={styles.categoryHeader}><Text style={styles.categoryHeaderText}>Analisa Kategori</Text></View>
+          <View style={[
+            styles.categoryCard, 
+            { 
+              backgroundColor: theme.background,
+              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderRadius: getRadius(200) 
+            }
+          ]}>
+            <View style={[styles.categoryHeader, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' }]}>
+              <Text style={styles.categoryHeaderText}>Analisa Kategori</Text>
+            </View>
             {categoryData.map((item) => (
-              <View key={item.categoryId} style={styles.categoryItem}>
-                <View style={[styles.categoryIcon, { borderRadius: getRadius(40) }]}><Text style={styles.categoryEmoji}>{item.categoryIcon}</Text></View>
-                <View style={styles.categoryContent}>
-                  <Text style={styles.categoryName}>{item.categoryName}</Text>
-                  <View style={styles.progressContainer}><View style={styles.progressBar}><View style={[styles.progressFill, { width: `${item.percentage}%`, backgroundColor: '#475569' }]} /></View><Text style={styles.percentageText}>{item.percentage.toFixed(1)}%</Text></View>
+              <View key={item.categoryId} style={[styles.categoryItem, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                <View style={[
+                  styles.categoryIcon, 
+                  { 
+                    backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
+                    borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                    borderRadius: getRadius(40) 
+                  }
+                ]}>
+                  <Text style={styles.categoryEmoji}>{item.categoryIcon}</Text>
                 </View>
-                <View style={styles.categoryAmount}><Text style={styles.amountText}>{formatCurrency(item.total)}</Text></View>
+                <View style={styles.categoryContent}>
+                  <Text style={[styles.categoryName, { color: theme.text }]}>{item.categoryName}</Text>
+                  <View style={styles.progressContainer}>
+                    <View style={[styles.progressBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                      <View style={[
+                        styles.progressFill, 
+                        { width: `${item.percentage}%`, backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#475569' }
+                      ]} />
+                    </View>
+                    <Text style={styles.percentageText}>{item.percentage.toFixed(1)}%</Text>
+                  </View>
+                </View>
+                <View style={styles.categoryAmount}>
+                  <Text style={[styles.amountText, { color: theme.text }]}>{formatCurrency(item.total)}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -236,67 +373,129 @@ export default function StatsScreen() {
       <Modal visible={showCustomRangeModal} transparent animationType="fade" onRequestClose={() => setShowCustomRangeModal(false)}>
         <View style={styles.modalOverlay}>
           <Pressable style={styles.modalOverlay} onPress={() => setShowCustomRangeModal(false)} />
-          <View style={[styles.modalContent, { borderRadius: getRadius(300, 'large') }]}>
-            <View style={styles.modalHeader}><Text style={styles.modalTitle}>Rentang Waktu</Text><TouchableOpacity onPress={() => setShowCustomRangeModal(false)}><Ionicons name="close" size={24} color="#64748b" /></TouchableOpacity></View>
+          <View style={[
+            styles.modalContent, 
+            { 
+              backgroundColor: theme.background,
+              borderRadius: getRadius(300, 'large') 
+            }
+          ]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Rentang Waktu</Text>
+              <TouchableOpacity onPress={() => setShowCustomRangeModal(false)}>
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
             <View style={{ padding: 20, gap: 16 }}>
-              <View><Text style={styles.inputLabel}>Mulai (YYYY-MM-DD)</Text><TextInput style={[styles.input, { borderRadius: getRadius(50) }]} placeholder="2024-01-01" value={tempRange.start} onChangeText={(val) => setTempRange(prev => ({ ...prev, start: val }))} /></View>
-              <View><Text style={styles.inputLabel}>Selesai (YYYY-MM-DD)</Text><TextInput style={[styles.input, { borderRadius: getRadius(50) }]} placeholder="2024-01-31" value={tempRange.end} onChangeText={(val) => setTempRange(prev => ({ ...prev, end: val }))} /></View>
-              <TouchableOpacity style={[styles.saveBtn, { borderRadius: getRadius(56) }]} onPress={() => { const start = new Date(tempRange.start); const end = new Date(tempRange.end); if (isNaN(start.getTime()) || isNaN(end.getTime())) { showAlert({ title: 'Error', message: 'Format salah', type: 'error' }); return; } setCustomRange({ start, end }); setTimeRange('CUSTOM'); setShowCustomRangeModal(false); }}><Text style={styles.saveBtnText}>Terapkan</Text></TouchableOpacity>
+              <View>
+                <Text style={styles.inputLabel}>Mulai (YYYY-MM-DD)</Text>
+                <TextInput 
+                  style={[
+                    styles.input, 
+                    { 
+                      backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
+                      borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                      color: theme.text,
+                      borderRadius: getRadius(50) 
+                    }
+                  ]} 
+                  placeholder="2024-01-01" 
+                  placeholderTextColor="#64748b"
+                  value={tempRange.start} 
+                  onChangeText={(val) => setTempRange(prev => ({ ...prev, start: val }))} 
+                />
+              </View>
+              <View>
+                <Text style={styles.inputLabel}>Selesai (YYYY-MM-DD)</Text>
+                <TextInput 
+                  style={[
+                    styles.input, 
+                    { 
+                      backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
+                      borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                      color: theme.text,
+                      borderRadius: getRadius(50) 
+                    }
+                  ]} 
+                  placeholder="2024-01-31" 
+                  placeholderTextColor="#64748b"
+                  value={tempRange.end} 
+                  onChangeText={(val) => setTempRange(prev => ({ ...prev, end: val }))} 
+                />
+              </View>
+              <TouchableOpacity 
+                style={[styles.saveBtn, { backgroundColor: theme.tint, borderRadius: getRadius(56) }]} 
+                onPress={() => { 
+                  const start = new Date(tempRange.start); 
+                  const end = new Date(tempRange.end); 
+                  if (isNaN(start.getTime()) || isNaN(end.getTime())) { 
+                    showAlert({ title: 'Error', message: 'Format salah', type: 'error' }); 
+                    return; 
+                  } 
+                  setCustomRange({ start, end }); 
+                  setTimeRange('CUSTOM'); 
+                  setShowCustomRangeModal(false); 
+                }}
+              >
+                <Text style={styles.saveBtnText}>Terapkan</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      <CustomAlert visible={alertVisible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} buttons={alertConfig.buttons} onClose={() => setAlertVisible(false)} />
+      <CustomAlert 
+        visible={alertVisible} 
+        title={alertConfig.title} 
+        message={alertConfig.message} 
+        type={alertConfig.type} 
+        buttons={alertConfig.buttons} 
+        onClose={() => setAlertVisible(false)} 
+      />
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  monthNav: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  monthNav: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 12, borderBottomWidth: 1 },
   monthContent: { flex: 1, alignItems: 'center' },
   navBtn: { padding: 8, backgroundColor: 'transparent' },
-  monthText: { fontSize: 13, fontWeight: '800', color: '#0f172a', letterSpacing: -0.3 },
+  monthText: { fontSize: 13, fontWeight: '800', letterSpacing: -0.3 },
   navRightGroup: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   filterBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', width: 40, height: 40 },
-  filterBtnActive: { backgroundColor: Colors.light.tint + '10', borderRadius: 8 },
-  tabContainer: { flexDirection: 'row', padding: 16, gap: 12, backgroundColor: '#fff' },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, gap: 6, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9' },
-  tabActive: { backgroundColor: '#fff', borderColor: Colors.light.tint, borderWidth: 1.5 },
+  tabContainer: { flexDirection: 'row', padding: 16, gap: 12 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, gap: 6, borderWidth: 1 },
   tabText: { fontSize: 12, fontWeight: '500', color: '#64748b' },
-  tabTextActive: { color: Colors.light.tint, fontWeight: '700' },
-  totalCard: { backgroundColor: '#fff', margin: 16, marginBottom: 12, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
+  totalCard: { margin: 16, marginBottom: 12, padding: 20, alignItems: 'center', borderWidth: 1 },
   totalLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginBottom: 6, letterSpacing: 0.5 },
-  totalAmount: { fontSize: 24, fontWeight: '900', color: '#0f172a', letterSpacing: -1 },
-  chartCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 12, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
-  emptyCard: { backgroundColor: '#fff', marginHorizontal: 16, padding: 40, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
+  totalAmount: { fontSize: 24, fontWeight: '900', letterSpacing: -1 },
+  chartCard: { marginHorizontal: 16, marginBottom: 12, padding: 24, alignItems: 'center', borderWidth: 1 },
+  emptyCard: { marginHorizontal: 16, padding: 40, alignItems: 'center', borderWidth: 1 },
   emptyText: { fontSize: 13, color: '#94a3b8', marginTop: 12 },
-  categoryCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 24, borderWidth: 1, borderColor: '#f1f5f9', overflow: 'hidden' },
-  categoryHeader: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#f8fafc' },
+  categoryCard: { marginHorizontal: 16, marginBottom: 24, borderWidth: 1, overflow: 'hidden' },
+  categoryHeader: { paddingHorizontal: 16, paddingVertical: 12 },
   categoryHeaderText: { fontSize: 12, fontWeight: '700', color: '#64748b', letterSpacing: 0.5 },
-  categoryItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', gap: 12 },
-  categoryIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9' },
+  categoryItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, gap: 12 },
+  categoryIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   categoryEmoji: { fontSize: 20 },
   categoryContent: { flex: 1 },
-  categoryName: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 6 },
+  categoryName: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
   progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  progressBar: { flex: 1, height: 6, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden' },
+  progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
   percentageText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
   categoryAmount: { alignItems: 'flex-end', justifyContent: 'center' },
-  amountText: { fontSize: 15, fontWeight: '900', color: '#0f172a' },
+  amountText: { fontSize: 15, fontWeight: '900' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#fff', width: '100%', overflow: 'hidden' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9', alignItems: 'center' },
-  modalTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
+  modalContent: { width: '100%', overflow: 'hidden' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, alignItems: 'center' },
+  modalTitle: { fontSize: 16, fontWeight: '800' },
   inputLabel: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 8 },
-  input: { backgroundColor: '#f8fafc', padding: 14, borderWidth: 1, borderColor: '#f1f5f9', fontSize: 14 },
-  saveBtn: { backgroundColor: '#0f172a', padding: 16, alignItems: 'center', marginTop: 10 },
+  input: { padding: 14, borderWidth: 1, fontSize: 14 },
+  saveBtn: { padding: 16, alignItems: 'center', marginTop: 10 },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  inlineDropdown: { position: 'absolute', top: 50, right: 0, width: 170, backgroundColor: '#fff', padding: 6, borderWidth: 1, borderColor: '#f1f5f9', zIndex: 1100, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
+  inlineDropdown: { position: 'absolute', top: 50, right: 0, width: 170, padding: 6, borderWidth: 1, zIndex: 1100, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
   inlineMenuItem: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10 },
-  inlineMenuItemActive: { backgroundColor: '#f1f5f9' },
   inlineMenuText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
-  inlineMenuTextActive: { color: Colors.light.tint, fontWeight: '700' },
 });

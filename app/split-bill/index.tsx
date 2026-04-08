@@ -3,74 +3,80 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { ScreenWrapper } from '@/components/ui/screen-wrapper';
+import { Header } from '@/components/ui/header';
+import { Colors, getRadius } from '@/constants/theme';
+import { useTranslation } from 'react-i18next';
 
 export default function SplitBillComingSoonScreen() {
-  const router = useRouter();
+  const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
-        </TouchableOpacity>
-      </View>
+    <ScreenWrapper backgroundColor={theme.background}>
+      <Header title="Split Bill" />
 
       <View style={styles.content}>
-        <Feather name="scissors" size={48} color="#1e293b" />
-        <Text style={styles.title}>Split Bill</Text>
-        <Text style={styles.subtitle}>Coming Soon</Text>
-        <Text style={styles.description}>
+        <View style={[styles.iconContainer, { backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', borderRadius: getRadius(120, 'large') }]}>
+          <Feather name="scissors" size={48} color={theme.tint} />
+        </View>
+        <Text style={[styles.title, { color: theme.text }]}>Split Bill</Text>
+        <View style={[styles.badge, { backgroundColor: theme.tint + '20', borderRadius: getRadius(40, 'small') }]}>
+          <Text style={[styles.subtitle, { color: theme.tint }]}>COMING SOON</Text>
+        </View>
+        <Text style={[styles.description, { color: theme.textSecondary }]}>
           Fitur patungan belanja & makan segera hadir untuk mempermudah hidup Anda.
         </Text>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    padding: 8,
-  },
   content: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
-    marginTop: -80, // Offset to look more centered visually
+    marginTop: -40,
+  },
+  iconContainer: {
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1e293b',
-    marginTop: 24,
-    marginBottom: 4,
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 12,
+    letterSpacing: -1,
+  },
+  badge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 24,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 20,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 2.5,
   },
   description: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 24,
+    fontWeight: '600',
   },
 });

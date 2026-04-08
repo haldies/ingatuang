@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
+  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -22,6 +23,8 @@ import Animated, {
   withSequence,
   useSharedValue,
 } from 'react-native-reanimated';
+import { Colors, getRadius } from '@/constants/theme';
+import { Header } from '@/components/ui/header';
 
 const { width } = Dimensions.get('window');
 
@@ -63,10 +66,11 @@ const PREMIUM_FEATURES = [
   },
 ];
 
-import { Header } from '@/components/ui/header';
-
 export default function PremiumScreen() {
   const router = useRouter();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   const [selectedPlan, setSelectedPlan] = React.useState<'monthly' | 'yearly'>('yearly');
   
   const glowValue = useSharedValue(0.4);
@@ -87,9 +91,9 @@ export default function PremiumScreen() {
   }));
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: isDark ? '#000' : theme.background }]}>
       <LinearGradient
-        colors={['#0F172A', '#1E293B', '#0F172A']}
+        colors={isDark ? ['#0F172A', '#000', '#000'] : ['#F8FAFC', '#FFFFFF', '#F8FAFC']}
         style={StyleSheet.absoluteFill}
       />
       
@@ -106,18 +110,18 @@ export default function PremiumScreen() {
             style={styles.heroSection}
           >
             <View style={styles.premiumBadgeContainer}>
-              <Animated.View style={[styles.glowEffect, glowStyle]} />
+              <Animated.View style={[styles.glowEffect, glowStyle, { borderRadius: getRadius(200, 'small') }]} />
               <LinearGradient
                 colors={['#F59E0B', '#D97706']}
-                style={styles.premiumBadge}
+                style={[styles.premiumBadge, { borderRadius: getRadius(200, 'small') }]}
               >
                 <Ionicons name="star" size={16} color="#000" />
                 <Text style={styles.premiumBadgeText}>PREMIUM ACCESS</Text>
               </LinearGradient>
             </View>
 
-            <Text style={styles.heroTitle}>Upgrade ke Pro</Text>
-            <Text style={styles.heroSubtitle}>
+            <Text style={[styles.heroTitle, { color: theme.text }]}>Upgrade ke Pro</Text>
+            <Text style={[styles.heroSubtitle, { color: isDark ? '#94A3B8' : '#64748B' }]}>
               Kelola keuangan lebih cerdas dengan fitur eksklusif IngatUang Pro.
             </Text>
           </Animated.View>
@@ -128,15 +132,22 @@ export default function PremiumScreen() {
               <Animated.View
                 key={feature.title}
                 entering={FadeInDown.delay(200 + index * 100).duration(800)}
-                style={styles.featureCard}
+                style={[
+                  styles.featureCard, 
+                  { 
+                    borderRadius: getRadius(200),
+                    borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)' 
+                  }
+                ]}
               >
-                <BlurView intensity={20} tint="dark" style={styles.featureBlur}>
-                  <View style={[styles.featureIconContainer, { backgroundColor: feature.color + '20' }]}>
+                <BlurView intensity={isDark ? 20 : 10} tint={isDark ? "dark" : "light"} style={styles.featureBlur}>
+                  <View style={[styles.featureIconContainer, { backgroundColor: feature.color + '20', borderRadius: getRadius(140, 'small') }]}>
                     <Ionicons name={feature.icon as any} size={24} color={feature.color} />
                   </View>
                   <View style={styles.featureTextContainer}>
-                    <Text style={styles.featureTitle}>{feature.title}</Text>
-                    <Text style={styles.featureDescription}>{feature.description}</Text>
+                    <Text style={[styles.featureTitle, { color: theme.text }]}>{feature.title}</Text>
+                    <Text style={[styles.featureDescription, { color: isDark ? '#94A3B8' : '#64748B' }]}>{feature.description}</Text>
                   </View>
                 </BlurView>
               </Animated.View>
@@ -148,45 +159,53 @@ export default function PremiumScreen() {
             entering={FadeInUp.delay(800).duration(800)}
             style={styles.pricingSection}
           >
-            <Text style={styles.pricingHeader}>Pilih Paket Anda</Text>
+            <Text style={[styles.pricingHeader, { color: theme.text }]}>Pilih Paket Anda</Text>
             
             <View style={styles.plansContainer}>
               <TouchableOpacity
                 style={[
                   styles.planCard,
-                  selectedPlan === 'monthly' && styles.selectedPlanCard
+                  { 
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    borderRadius: getRadius(240) 
+                  },
+                  selectedPlan === 'monthly' && [styles.selectedPlanCard, { borderColor: theme.tint, backgroundColor: theme.tint + '10' }]
                 ]}
                 onPress={() => setSelectedPlan('monthly')}
                 activeOpacity={0.7}
               >
                 <View style={styles.planHeader}>
-                  <Text style={[styles.planName, selectedPlan === 'monthly' && styles.selectedPlanText]}>Bulanan</Text>
+                  <Text style={[styles.planName, { color: isDark ? '#94A3B8' : '#64748B' }, selectedPlan === 'monthly' && { color: theme.text }]}>Bulanan</Text>
                   {selectedPlan === 'monthly' && (
-                    <Ionicons name="checkmark-circle" size={20} color="#F59E0B" />
+                    <Ionicons name="checkmark-circle" size={20} color={theme.tint} />
                   )}
                 </View>
-                <Text style={styles.planPrice}>Rp 19rb<Text style={styles.planPeriod}>/bln</Text></Text>
+                <Text style={[styles.planPrice, { color: theme.text }]}>Rp 19rb<Text style={styles.planPeriod}>/bln</Text></Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.planCard,
-                  selectedPlan === 'yearly' && styles.selectedPlanCard
+                  { 
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                    borderRadius: getRadius(240) 
+                  },
+                  selectedPlan === 'yearly' && [styles.selectedPlanCard, { borderColor: theme.tint, backgroundColor: theme.tint + '10' }]
                 ]}
                 onPress={() => setSelectedPlan('yearly')}
                 activeOpacity={0.7}
               >
-                <View style={styles.planBadge}>
+                <View style={[styles.planBadge, { backgroundColor: theme.tint, borderRadius: getRadius(100, 'small') }]}>
                   <Text style={styles.planBadgeText}>Hemat 35%</Text>
                 </View>
                 <View style={styles.planHeader}>
-                  <Text style={[styles.planName, selectedPlan === 'yearly' && styles.selectedPlanText]}>Tahunan</Text>
+                  <Text style={[styles.planName, { color: isDark ? '#94A3B8' : '#64748B' }, selectedPlan === 'yearly' && { color: theme.text }]}>Tahunan</Text>
                   {selectedPlan === 'yearly' && (
-                    <Ionicons name="checkmark-circle" size={20} color="#F59E0B" />
+                    <Ionicons name="checkmark-circle" size={20} color={theme.tint} />
                   )}
                 </View>
-                <Text style={styles.planPrice}>Rp 149rb<Text style={styles.planPeriod}>/thn</Text></Text>
-                <Text style={styles.planSavings}>Hanya Rp 12.400 / bln</Text>
+                <Text style={[styles.planPrice, { color: theme.text }]}>Rp 149rb<Text style={styles.planPeriod}>/thn</Text></Text>
+                <Text style={[styles.planSavings, { color: theme.tint }]}>Hanya Rp 12.400 / bln</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -194,8 +213,8 @@ export default function PremiumScreen() {
       </SafeAreaView>
 
       {/* Footer / Subscribe Button Overlay */}
-      <BlurView intensity={80} tint="dark" style={styles.footer}>
-        <TouchableOpacity style={styles.subscribeButton} activeOpacity={0.8}>
+      <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.footer, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+        <TouchableOpacity style={[styles.subscribeButton, { borderRadius: getRadius(160, 'small') }]} activeOpacity={0.8}>
           <LinearGradient
             colors={['#F59E0B', '#D97706']}
             style={styles.subscribeGradient}
@@ -214,11 +233,11 @@ export default function PremiumScreen() {
           <TouchableOpacity onPress={() => router.push('/privacy-security')}>
             <Text style={styles.legalLinkText}>Privacy Policy</Text>
           </TouchableOpacity>
-          <View style={styles.legalDivider} />
+          <View style={[styles.legalDivider, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
           <TouchableOpacity onPress={() => {}}>
             <Text style={styles.legalLinkText}>Restore Purchase</Text>
           </TouchableOpacity>
-          <View style={styles.legalDivider} />
+          <View style={[styles.legalDivider, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
           <TouchableOpacity onPress={() => {}}>
             <Text style={styles.legalLinkText}>Terms of Use</Text>
           </TouchableOpacity>
@@ -233,23 +252,9 @@ export default function PremiumScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    zIndex: 10,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   scrollContent: {
-    paddingBottom: 150,
+    paddingBottom: 180,
   },
   heroSection: {
     alignItems: 'center',
@@ -267,7 +272,6 @@ const styles = StyleSheet.create({
     left: -4,
     right: -4,
     bottom: -4,
-    borderRadius: 20,
     backgroundColor: '#F59E0B',
     opacity: 0.5,
   },
@@ -276,7 +280,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
     gap: 8,
   },
   premiumBadgeText: {
@@ -288,13 +291,11 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#fff',
     textAlign: 'center',
     marginBottom: 12,
   },
   heroSubtitle: {
     fontSize: 16,
-    color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -304,10 +305,8 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   featureCard: {
-    borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   featureBlur: {
     flexDirection: 'row',
@@ -318,7 +317,6 @@ const styles = StyleSheet.create({
   featureIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -328,12 +326,10 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
     marginBottom: 4,
   },
   featureDescription: {
     fontSize: 13,
-    color: '#94A3B8',
     lineHeight: 18,
   },
   pricingSection: {
@@ -342,7 +338,6 @@ const styles = StyleSheet.create({
   pricingHeader: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#fff',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -352,25 +347,20 @@ const styles = StyleSheet.create({
   },
   planCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 24,
     padding: 20,
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative',
   },
   selectedPlanCard: {
-    borderColor: '#F59E0B',
-    backgroundColor: 'rgba(245, 158, 11, 0.05)',
+    borderWidth: 2,
   },
   planBadge: {
     position: 'absolute',
     top: -12,
     right: 12,
-    backgroundColor: '#F59E0B',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 10,
     zIndex: 1,
   },
   planBadgeText: {
@@ -387,16 +377,11 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#94A3B8',
     flex: 1,
-  },
-  selectedPlanText: {
-    color: '#fff',
   },
   planPrice: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#fff',
   },
   planPeriod: {
     fontSize: 14,
@@ -405,7 +390,6 @@ const styles = StyleSheet.create({
   },
   planSavings: {
     fontSize: 11,
-    color: '#F59E0B',
     marginTop: 4,
     fontWeight: '500',
   },
@@ -418,10 +402,8 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
   },
   subscribeButton: {
-    borderRadius: 16,
     overflow: 'hidden',
   },
   subscribeGradient: {
@@ -458,6 +440,5 @@ const styles = StyleSheet.create({
   legalDivider: {
     width: 1,
     height: 10,
-    backgroundColor: '#334155',
   },
 });

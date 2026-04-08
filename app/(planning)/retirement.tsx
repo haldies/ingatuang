@@ -10,10 +10,9 @@ import {
   Keyboard,
   ActivityIndicator,
   StyleSheet,
-  Dimensions
+  useColorScheme as useNativeColorScheme
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { formatCurrency } from '@/lib/utils/format';
 import { Colors, getRadius } from '@/constants/theme';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
@@ -27,11 +26,11 @@ type Message = {
   data?: any;
 };
 
-const { width } = Dimensions.get('window');
-
 export default function RetirementChatPlan() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   const scrollRef = useRef<ScrollView>(null);
   
   const [messages, setMessages] = useState<Message[]>([
@@ -97,48 +96,110 @@ export default function RetirementChatPlan() {
   useEffect(() => { setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200); }, [messages, isTyping]);
 
   return (
-    <ScreenWrapper backgroundColor="#fff">
+    <ScreenWrapper backgroundColor={theme.background}>
       <Header title={t('retirement.bot_name')} />
       
       <ScrollView ref={scrollRef} style={styles.chatArea} contentContainerStyle={{ paddingVertical: 20 }} showsVerticalScrollIndicator={false}>
         {messages.map((m) => (
           <View key={m.id} style={[styles.messageContainer, m.type === 'user' ? styles.userAlign : styles.botAlign]}>
-            <View style={[styles.bubble, m.type === 'user' ? styles.userBubble : styles.botBubble, { borderRadius: getRadius(50) }, m.type === 'user' ? { borderTopRightRadius: 0 } : { borderTopLeftRadius: 0 }]}>
-              <Text style={[styles.bubbleText, m.type === 'user' ? styles.userText : styles.botText]}>{m.text}</Text>
+            <View style={[
+              styles.bubble, 
+              m.type === 'user' ? { backgroundColor: theme.tint } : { backgroundColor: isDark ? '#1a1a1a' : '#f1f5f9' }, 
+              { borderRadius: getRadius(50) }, 
+              m.type === 'user' ? { borderTopRightRadius: 0 } : { borderTopLeftRadius: 0 }
+            ]}>
+              <Text style={[
+                styles.bubbleText, 
+                m.type === 'user' ? { color: '#fff' } : { color: theme.text },
+                { fontWeight: '700' }
+              ]}>{m.text}</Text>
             </View>
 
             {m.data && (
-              <View style={[styles.resultCard, { borderRadius: getRadius(320, 'large') }]}>
-                <Text style={styles.resultHeader}>{t('retirement.target_fund')}</Text>
-                <Text style={styles.resultAmount}>{formatCurrency(m.data.moneyNeeded)}</Text>
-                <View style={styles.divider} />
-                <View style={[styles.statusBox, { backgroundColor: m.data.isSuccess ? '#ecfdf5' : '#fff7ed', borderColor: m.data.isSuccess ? '#10b981' : '#f97316', borderRadius: getRadius(52) }]}>
-                  <Text style={[styles.statusText, { color: m.data.isSuccess ? '#047857' : '#c2410c' }]}>{m.data.isSuccess ? t('retirement.success_msg') : t('retirement.fail_msg')}</Text>
+              <View style={[styles.resultCard, { 
+                borderRadius: getRadius(320, 'large'),
+                backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                borderColor: isDark ? '#262626' : '#f1f5f9'
+              }]}>
+                <Text style={[styles.resultHeader, { color: isDark ? '#475569' : '#94a3b8' }]}>{t('retirement.target_fund')}</Text>
+                <Text style={[styles.resultAmount, { color: theme.text }]}>{formatCurrency(m.data.moneyNeeded)}</Text>
+                <View style={[styles.divider, { backgroundColor: isDark ? '#262626' : '#f1f5f9' }]} />
+                <View style={[styles.statusBox, { 
+                  backgroundColor: m.data.isSuccess ? (isDark ? '#064e3b' : '#ecfdf5') : (isDark ? '#431407' : '#fff7ed'), 
+                  borderColor: m.data.isSuccess ? '#10b981' : '#f97316', 
+                  borderRadius: getRadius(52) 
+                }]}>
+                  <Text style={[styles.statusText, { color: m.data.isSuccess ? (isDark ? '#10b981' : '#047857') : (isDark ? '#f97316' : '#c2410c') }]}>
+                    {m.data.isSuccess ? t('retirement.success_msg') : t('retirement.fail_msg')}
+                  </Text>
                 </View>
-                <View style={styles.detailRow}><Text style={styles.detailLabel}>Estimasi Dana</Text><Text style={styles.detailVal}>{formatCurrency(m.data.fv)}</Text></View>
-                <View style={styles.detailRow}><Text style={styles.detailLabel}>Passive Income</Text><Text style={[styles.detailVal, { color: Colors.light.tint }]}>{formatCurrency(m.data.monthlyPassive)}/bln</Text></View>
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Estimasi Dana</Text>
+                  <Text style={[styles.detailVal, { color: theme.text }]}>{formatCurrency(m.data.fv)}</Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailLabel, { color: isDark ? '#94a3b8' : '#64748b' }]}>Passive Income</Text>
+                  <Text style={[styles.detailVal, { color: theme.tint }]}>{formatCurrency(m.data.monthlyPassive)}/bln</Text>
+                </View>
                 
                 <View style={styles.breakdown}>
-                  <Text style={styles.breakdownHeader}>BREAKDOWN STRATEGI</Text>
-                  <View style={styles.barContainer}><View style={{ flex: m.data.totalPokok, backgroundColor: Colors.light.tint }} /><View style={{ flex: m.data.totalProfit, backgroundColor: '#f59e0b' }} /></View>
+                  <Text style={[styles.breakdownHeader, { color: isDark ? '#475569' : '#cbd5e1' }]}>BREAKDOWN STRATEGI</Text>
+                  <View style={styles.barContainer}>
+                    <View style={{ flex: m.data.totalPokok, backgroundColor: theme.tint }} />
+                    <View style={{ flex: m.data.totalProfit, backgroundColor: '#f59e0b' }} />
+                  </View>
                   <View style={styles.legendRow}>
-                    <View><Text style={[styles.legPct, { color: Colors.light.tint }]}>{((m.data.totalPokok/m.data.fv)*100).toFixed(0)}%</Text><Text style={styles.legLabel}>POKOK</Text></View>
-                    <View style={{ alignItems: 'flex-end' }}><Text style={[styles.legPct, { color: '#f59e0b' }]}>{((m.data.totalProfit/m.data.fv)*100).toFixed(0)}%</Text><Text style={styles.legLabel}>PROFIT</Text></View>
+                    <View>
+                      <Text style={[styles.legPct, { color: theme.tint }]}>{((m.data.totalPokok/m.data.fv)*100).toFixed(0)}%</Text>
+                      <Text style={[styles.legLabel, { color: isDark ? '#475569' : '#94a3b8' }]}>POKOK</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={[styles.legPct, { color: '#f59e0b' }]}>{((m.data.totalProfit/m.data.fv)*100).toFixed(0)}%</Text>
+                      <Text style={[styles.legLabel, { color: isDark ? '#475569' : '#94a3b8' }]}>PROFIT</Text>
+                    </View>
                   </View>
                 </View>
               </View>
             )}
           </View>
         ))}
-        {isTyping && <View style={[styles.typingBubble, { borderRadius: getRadius(44) }]}><ActivityIndicator size="small" color="#94a3b8" /></View>}
+        {isTyping && <View style={[styles.typingBubble, { 
+          borderRadius: getRadius(44),
+          backgroundColor: isDark ? '#1a1a1a' : '#f8fafc'
+        }]}>
+          <ActivityIndicator size="small" color={isDark ? theme.tint : "#94a3b8"} />
+        </View>}
       </ScrollView>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
-        <View style={styles.inputContainer}>
-          <View style={[styles.inputWrapper, { borderRadius: getRadius(56) }]}>
-            <TextInput style={styles.input} placeholder={step > 4 ? "Selesai" : "Ketik angka..."} keyboardType="numeric" value={input} onChangeText={setInput} onSubmitEditing={handleSend} editable={step <= 4} />
-            <TouchableOpacity onPress={handleSend} disabled={!input} style={[styles.sendBtn, { backgroundColor: input ? Colors.light.tint : '#f1f5f9', borderRadius: getRadius(44) }]}>
-              <Ionicons name="arrow-up" size={20} color={input ? "#fff" : "#cbd5e1"} />
+        <View style={[styles.inputContainer, { 
+          backgroundColor: theme.background,
+          borderTopColor: isDark ? '#1a1a1a' : '#f1f5f9'
+        }]}>
+          <View style={[styles.inputWrapper, { 
+            borderRadius: getRadius(56),
+            backgroundColor: isDark ? '#0a0a0a' : '#f8fafc',
+            borderColor: isDark ? '#1a1a1a' : '#f1f5f9'
+          }]}>
+            <TextInput 
+              style={[styles.input, { color: theme.text }]} 
+              placeholder={step > 4 ? "Selesai" : "Ketik angka..."} 
+              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+              keyboardType="numeric" 
+              value={input} 
+              onChangeText={setInput} 
+              onSubmitEditing={handleSend} 
+              editable={step <= 4} 
+            />
+            <TouchableOpacity 
+              onPress={handleSend} 
+              disabled={!input} 
+              style={[styles.sendBtn, { 
+                backgroundColor: input ? theme.tint : (isDark ? '#1a1a1a' : '#f1f5f9'), 
+                borderRadius: getRadius(44) 
+              }]}
+            >
+              <Ionicons name="arrow-up" size={20} color={input ? "#fff" : (isDark ? '#475569' : "#cbd5e1")} />
             </TouchableOpacity>
           </View>
         </View>
@@ -153,29 +214,25 @@ const styles = StyleSheet.create({
   userAlign: { alignItems: 'flex-end' },
   botAlign: { alignItems: 'flex-start' },
   bubble: { paddingHorizontal: 18, paddingVertical: 14, maxWidth: '85%' },
-  userBubble: { backgroundColor: Colors.light.tint },
-  botBubble: { backgroundColor: '#f1f5f9' },
   bubbleText: { fontSize: 15, lineHeight: 22 },
-  userText: { color: '#fff', fontWeight: '500' },
-  botText: { color: '#334155' },
-  typingBubble: { width: 60, height: 44, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  resultCard: { width: '100%', backgroundColor: '#fff', padding: 24, marginTop: 12, borderWidth: 1, borderColor: '#f1f5f9', elevation: 2, shadowOpacity: 0.05 },
-  resultHeader: { fontSize: 10, fontWeight: '800', color: '#94a3b8', letterSpacing: 1 },
-  resultAmount: { fontSize: 28, fontWeight: '900', color: '#0f172a', marginVertical: 8 },
-  divider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 20 },
+  typingBubble: { width: 60, height: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  resultCard: { width: '100%', padding: 24, marginTop: 12, borderWidth: 1, elevation: 2, shadowOpacity: 0.05 },
+  resultHeader: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  resultAmount: { fontSize: 28, fontWeight: '900', marginVertical: 8 },
+  divider: { height: 1, marginVertical: 20 },
   statusBox: { paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderStyle: 'dotted', marginBottom: 20 },
   statusText: { fontSize: 12, fontWeight: '800' },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  detailLabel: { fontSize: 13, color: '#64748b', fontWeight: '600' },
-  detailVal: { fontSize: 14, fontWeight: '800', color: '#1e293b' },
+  detailLabel: { fontSize: 13, fontWeight: '700' },
+  detailVal: { fontSize: 14, fontWeight: '800' },
   breakdown: { marginTop: 12 },
-  breakdownHeader: { fontSize: 9, fontWeight: '900', color: '#cbd5e1', letterSpacing: 0.5, marginBottom: 10 },
+  breakdownHeader: { fontSize: 9, fontWeight: '900', letterSpacing: 0.5, marginBottom: 10 },
   barContainer: { height: 8, flexDirection: 'row', borderRadius: 4, overflow: 'hidden', marginBottom: 12 },
   legendRow: { flexDirection: 'row', justifyContent: 'space-between' },
   legPct: { fontSize: 12, fontWeight: '900' },
-  legLabel: { fontSize: 8, color: '#94a3b8', fontWeight: '800' },
-  inputContainer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-  inputWrapper: { flexDirection: 'row', backgroundColor: '#f8fafc', padding: 6, alignItems: 'center', borderWidth: 1, borderColor: '#f1f5f9' },
-  input: { flex: 1, paddingHorizontal: 16, height: 44, fontSize: 16, color: '#0f172a' },
+  legLabel: { fontSize: 8, fontWeight: '800' },
+  inputContainer: { padding: 16, borderTopWidth: 1 },
+  inputWrapper: { flexDirection: 'row', padding: 6, alignItems: 'center', borderWidth: 1 },
+  input: { flex: 1, paddingHorizontal: 16, height: 44, fontSize: 16, fontWeight: '700' },
   sendBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

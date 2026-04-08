@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, useColorScheme as useNativeColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Colors } from '@/constants/theme';
 
 /**
  * Redirects to the main Split Bill index (Coming Soon)
@@ -8,14 +9,16 @@ import { useRouter } from 'expo-router';
  */
 export default function SplitBillScanRedirect() {
   const router = useRouter();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
   
   useEffect(() => {
     router.replace('/split-bill');
   }, []);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-      <ActivityIndicator size="small" color="#1e293b" />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <ActivityIndicator size="small" color={theme.tint} />
     </View>
   );
 }

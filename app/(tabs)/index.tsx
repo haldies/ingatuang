@@ -14,7 +14,8 @@ import {
   Dimensions,
   LayoutAnimation,
   Platform,
-  UIManager
+  UIManager,
+  useColorScheme as useNativeColorScheme
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
@@ -46,6 +47,9 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const router = useRouter();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -207,76 +211,74 @@ export default function DashboardScreen() {
   }, [categories, selectedType]);
 
   const renderHeader = useCallback(() => (
-    <View style={styles.headerContainer}>
-      <View style={styles.toolbar}>
+    <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
+      <View style={[styles.toolbar, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
         <TouchableOpacity
-          style={[styles.toolbarButton, hasActiveFilters && styles.toolbarButtonActive]}
+          style={[
+            styles.toolbarButton, 
+            { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' },
+            hasActiveFilters && { backgroundColor: theme.tint + '15' }
+          ]}
           onPress={() => setIsFilterOpen(true)}
         >
-          <Ionicons name="filter" size={20} color={hasActiveFilters ? Colors.light.tint : '#1e293b'} />
-          {hasActiveFilters && <View style={styles.filterBadge} />}
+          <Ionicons name="filter" size={20} color={hasActiveFilters ? theme.tint : theme.text} />
+          {hasActiveFilters && <View style={[styles.filterBadge, { backgroundColor: theme.tint }]} />}
         </TouchableOpacity>
 
         <View style={styles.monthNavContainer}>
           <TouchableOpacity onPress={goToPreviousMonth} style={styles.monthNavButton}>
-            <Ionicons name="chevron-back" size={20} color="#1e293b" />
+            <Ionicons name="chevron-back" size={20} color={theme.text} />
           </TouchableOpacity>
-          <Text style={styles.monthText}>{formatMonthYear(currentDate)}</Text>
+          <Text style={[styles.monthText, { color: theme.text }]}>{formatMonthYear(currentDate)}</Text>
           <TouchableOpacity onPress={goToNextMonth} style={styles.monthNavButton}>
-            <Ionicons name="chevron-forward" size={20} color="#1e293b" />
+            <Ionicons name="chevron-forward" size={20} color={theme.text} />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.toolbarButton} onPress={() => router.push('/search')}>
-          <Ionicons name="search" size={20} color="#1e293b" />
+        <TouchableOpacity 
+          style={[styles.toolbarButton, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' }]} 
+          onPress={() => router.push('/search')}
+        >
+          <Ionicons name="search" size={20} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       {displayStats && <BalanceCard stats={displayStats} />}
 
-      <View style={styles.quickMenuContainer}>
+      <View style={[styles.quickMenuContainer, { borderBottomColor: colorScheme === 'dark' ? '#1a1a1a' : '#f8fafc' }]}>
         <View style={styles.quickMenuGrid}>
-          <TouchableOpacity style={styles.quickMenuItem} onPress={() => router.push('/subscriptions')}>
-            <View style={[styles.quickMenuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Feather name="calendar" size={22} color="#334155" />
-            </View>
-            <Text style={styles.quickMenuText} numberOfLines={1}>{t('features.subscriptions')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickMenuItem} onPress={() => router.push('/retirement')}>
-            <View style={[styles.quickMenuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Feather name="umbrella" size={22} color="#334155" />
-            </View>
-            <Text style={styles.quickMenuText} numberOfLines={1}>{t('features.retirement')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickMenuItem} onPress={() => router.push('/investment')}>
-            <View style={[styles.quickMenuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Feather name="trending-up" size={22} color="#334155" />
-            </View>
-            <Text style={styles.quickMenuText} numberOfLines={1}>{t('features.investment')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickMenuItem} onPress={() => router.push('/all-menus')}>
-            <View style={[styles.quickMenuIcon, { backgroundColor: '#f1f5f9' }]}>
-              <Feather name="grid" size={22} color="#334155" />
-            </View>
-            <Text style={styles.quickMenuText} numberOfLines={1}>{t('common.all_menus')}</Text>
-          </TouchableOpacity>
+          {[
+            { id: 'subscriptions', name: t('features.subscriptions'), icon: 'calendar', path: '/subscriptions' },
+            { id: 'retirement', name: t('features.retirement'), icon: 'umbrella', path: '/retirement' },
+            { id: 'investment', name: t('features.investment'), icon: 'trending-up', path: '/investment' },
+            { id: 'all-menus', name: t('common.all_menus'), icon: 'grid', path: '/all-menus' },
+          ].map((item) => (
+            <TouchableOpacity key={item.id} style={styles.quickMenuItem} onPress={() => router.push(item.path as any)}>
+              <View style={[styles.quickMenuIcon, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                <Feather name={item.icon as any} size={22} color={colorScheme === 'dark' ? '#e2e8f0' : '#334155'} />
+              </View>
+              <Text style={[styles.quickMenuText, { color: colorScheme === 'dark' ? '#94a3b8' : '#475569' }]} numberOfLines={1}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
       {filteredTransactions.length > 0 && (
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('dashboard.recent_transactions')}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('dashboard.recent_transactions')}</Text>
           {hasActiveFilters && (
             <Text style={styles.sectionSubtitle}>{filteredTransactions.length} {t('common.results')}</Text>
           )}
         </View>
       )}
     </View>
-  ), [hasActiveFilters, currentDate, displayStats, filteredTransactions.length, t, router]);
+  ), [hasActiveFilters, currentDate, displayStats, filteredTransactions.length, t, router, theme, colorScheme]);
 
   return (
-    <View style={styles.container}>
-      <View style={{ height: insets.top, backgroundColor: '#fff' }} />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={{ height: insets.top, backgroundColor: theme.background }} />
       <FlatList
         data={filteredTransactions}
         keyExtractor={item => item.id}
@@ -284,12 +286,18 @@ export default function DashboardScreen() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color="#e2e8f0" />
-            <Text style={styles.emptyTitle}>{t('dashboard.no_transactions')}</Text>
+            <Ionicons name="receipt-outline" size={64} color={colorScheme === 'dark' ? '#262626' : '#e2e8f0'} />
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('dashboard.no_transactions')}</Text>
             <Text style={styles.emptySubtitle}>{t('dashboard.no_results_desc')}</Text>
           </View>
         }
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} />}
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={() => loadData(true)} 
+            tintColor={theme.tint}
+          />
+        }
         contentContainerStyle={{ paddingBottom: 100 }}
       />
 
@@ -303,92 +311,153 @@ export default function DashboardScreen() {
       <Modal visible={isFilterOpen} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <TouchableOpacity style={styles.dismissOverlay} onPress={() => setIsFilterOpen(false)} />
-          <View style={[styles.filterSheet, {  borderTopLeftRadius: getRadius(400, 'large'), borderTopRightRadius: getRadius(400, 'large') }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{t('common.filter')}</Text>
-              <TouchableOpacity onPress={() => setIsFilterOpen(false)}><Ionicons name="close" size={24} color="#1e293b" /></TouchableOpacity>
+          <View style={[
+            styles.filterSheet, 
+            { 
+              backgroundColor: theme.background,
+              borderTopLeftRadius: getRadius(400, 'large'), 
+              borderTopRightRadius: getRadius(400, 'large') 
+            }
+          ]}>
+            <View style={[styles.sheetHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>{t('common.filter')}</Text>
+              <TouchableOpacity onPress={() => setIsFilterOpen(false)}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </TouchableOpacity>
             </View>
             <ScrollView style={styles.sheetBody}>
               <View style={styles.filterSection}>
-                <Text style={styles.sectionLabel}>{t('common.wallet')}</Text>
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>{t('common.wallet')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                  <TouchableOpacity style={[styles.filterChip, selectedWalletId === 'all' && styles.filterChipActive]} onPress={() => setSelectedWalletId('all')}>
-                    <Text style={[styles.filterChipText, selectedWalletId === 'all' && styles.filterChipTextActive]}>{t('common.all')}</Text>
+                  <TouchableOpacity 
+                    style={[
+                      styles.filterChip, 
+                      { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' },
+                      selectedWalletId === 'all' && { backgroundColor: theme.tint }
+                    ]} 
+                    onPress={() => setSelectedWalletId('all')}
+                  >
+                    <Text style={[
+                      styles.filterChipText, 
+                      { color: theme.text },
+                      selectedWalletId === 'all' && { color: '#fff' }
+                    ]}>
+                      {t('common.all')}
+                    </Text>
                   </TouchableOpacity>
                   {wallets.map(w => (
-                    <TouchableOpacity key={w.id} style={[styles.filterChip, selectedWalletId === w.id && styles.filterChipActive]} onPress={() => setSelectedWalletId(w.id)}>
+                    <TouchableOpacity 
+                      key={w.id} 
+                      style={[
+                        styles.filterChip, 
+                        { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' },
+                        selectedWalletId === w.id && { backgroundColor: theme.tint }
+                      ]} 
+                      onPress={() => setSelectedWalletId(w.id)}
+                    >
                       <Ionicons name={w.icon as any} size={14} color={selectedWalletId === w.id ? '#fff' : w.color} />
-                      <Text style={[styles.filterChipText, selectedWalletId === w.id && styles.filterChipTextActive]}>{w.name}</Text>
+                      <Text style={[
+                        styles.filterChipText, 
+                        { color: theme.text },
+                        selectedWalletId === w.id && { color: '#fff' }
+                      ]}>
+                        {w.name}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               </View>
               <View style={styles.filterSection}>
-                <Text style={styles.sectionLabel}>{t('common.type')}</Text>
-                <View style={styles.typeSwitcher}>
+                <Text style={[styles.sectionLabel, { color: theme.text }]}>{t('common.type')}</Text>
+                <View style={[styles.typeSwitcher, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
                   {['ALL', 'INCOME', 'EXPENSE'].map(type => (
-                    <TouchableOpacity key={type} style={[styles.typeButton, selectedType === type && styles.typeButtonActive]} onPress={() => setSelectedType(type as any)}>
-                      <Text style={[styles.typeButtonText, selectedType === type && styles.typeButtonTextActive]}>{type}</Text>
+                    <TouchableOpacity 
+                      key={type} 
+                      style={[
+                        styles.typeButton, 
+                        selectedType === type && { backgroundColor: colorScheme === 'dark' ? '#404040' : '#fff', elevation: 2, shadowOpacity: 0.05 }
+                      ]} 
+                      onPress={() => setSelectedType(type as any)}
+                    >
+                      <Text style={[
+                        styles.typeButtonText, 
+                        { color: colorScheme === 'dark' ? '#94a3b8' : '#64748b' },
+                        selectedType === type && { color: theme.tint }
+                      ]}>
+                        {type}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
             </ScrollView>
-            <View style={styles.sheetFooter}>
-               <TouchableOpacity style={styles.resetBtn} onPress={clearFilters}><Text style={styles.resetBtnText}>{t('common.reset')}</Text></TouchableOpacity>
-               <TouchableOpacity style={styles.applyBtn} onPress={() => setIsFilterOpen(false)}><Text style={styles.applyBtnText}>{t('common.apply')}</Text></TouchableOpacity>
+            <View style={[styles.sheetFooter, { borderTopColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+               <TouchableOpacity 
+                  style={[styles.resetBtn, { borderColor: colorScheme === 'dark' ? '#404040' : '#e2e8f0' }]} 
+                  onPress={clearFilters}
+                >
+                  <Text style={styles.resetBtnText}>{t('common.reset')}</Text>
+                </TouchableOpacity>
+               <TouchableOpacity 
+                  style={[styles.applyBtn, { backgroundColor: theme.tint }]} 
+                  onPress={() => setIsFilterOpen(false)}
+                >
+                  <Text style={styles.applyBtnText}>{t('common.apply')}</Text>
+                </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      <CustomAlert visible={alertVisible} title={alertConfig.title} message={alertConfig.message} type={alertConfig.type} buttons={alertConfig.buttons} onClose={() => setAlertVisible(false)} />
+      <CustomAlert 
+        visible={alertVisible} 
+        title={alertConfig.title} 
+        message={alertConfig.message} 
+        type={alertConfig.type} 
+        buttons={alertConfig.buttons} 
+        onClose={() => setAlertVisible(false)} 
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#ffffff' },
-  headerContainer: { backgroundColor: '#fff' },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  toolbarButton: { width: 40, height: 40, borderRadius: getRadius(40), alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
-  toolbarButtonActive: { backgroundColor: Colors.light.tint + '10' },
-  filterBadge: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.light.tint },
+  container: { flex: 1 },
+  headerContainer: { },
+  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  toolbarButton: { width: 40, height: 40, borderRadius: getRadius(40), alignItems: 'center', justifyContent: 'center' },
+  filterBadge: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4 },
   monthNavContainer: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   monthNavButton: { padding: 8 },
-  monthText: { fontSize: 15, fontWeight: '700', color: '#1e293b', minWidth: 120, textAlign: 'center' },
-  quickMenuContainer: { paddingVertical: 16, borderBottomWidth: 8, borderBottomColor: '#f8fafc' },
+  monthText: { fontSize: 15, fontWeight: '700', minWidth: 120, textAlign: 'center' },
+  quickMenuContainer: { paddingVertical: 16, borderBottomWidth: 8 },
   quickMenuGrid: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 10 },
   quickMenuItem: { alignItems: 'center', flex: 1 },
   quickMenuIcon: { width: 50, height: 50, borderRadius: getRadius(50), justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  quickMenuText: { fontSize: 10, fontWeight: '700', color: '#475569', textAlign: 'center', paddingHorizontal: 4 },
+  quickMenuText: { fontSize: 10, fontWeight: '700', textAlign: 'center', paddingHorizontal: 4 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#1e293b' },
+  sectionTitle: { fontSize: 16, fontWeight: '800' },
   sectionSubtitle: { fontSize: 12, color: '#64748b', fontWeight: '600' },
   emptyContainer: { alignItems: 'center', padding: 100 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginTop: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginTop: 16 },
   emptySubtitle: { fontSize: 14, color: '#94a3b8', textAlign: 'center', marginTop: 8 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'flex-end' },
   dismissOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  filterSheet: { backgroundColor: '#fff', height: SCREEN_HEIGHT * 0.75 },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 24, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  sheetTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b' },
+  filterSheet: { height: SCREEN_HEIGHT * 0.75 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 24, borderBottomWidth: 1 },
+  sheetTitle: { fontSize: 20, fontWeight: '800' },
   sheetBody: { padding: 24 },
   filterSection: { marginBottom: 24 },
-  sectionLabel: { fontSize: 14, fontWeight: '800', color: '#1e293b', marginBottom: 16 },
-  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: getRadius(44), backgroundColor: '#f1f5f9' },
-  filterChipActive: { backgroundColor: Colors.light.tint },
-  filterChipText: { fontSize: 13, fontWeight: '700', color: '#475569' },
-  filterChipTextActive: { color: '#fff' },
-  typeSwitcher: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: getRadius(60), padding: 4 },
+  sectionLabel: { fontSize: 14, fontWeight: '800', marginBottom: 16 },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 16, paddingVertical: 10, borderRadius: getRadius(44) },
+  filterChipText: { fontSize: 13, fontWeight: '700' },
+  typeSwitcher: { flexDirection: 'row', borderRadius: getRadius(60), padding: 4 },
   typeButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: getRadius(52) },
-  typeButtonActive: { backgroundColor: '#fff', elevation: 2, shadowOpacity: 0.05 },
-  typeButtonText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
-  typeButtonTextActive: { color: Colors.light.tint },
-  sheetFooter: { flexDirection: 'row', gap: 12, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-  resetBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderRadius: getRadius(56), borderWidth: 1, borderColor: '#e2e8f0' },
+  typeButtonText: { fontSize: 13, fontWeight: '700' },
+  sheetFooter: { flexDirection: 'row', gap: 12, padding: 24, paddingBottom: Platform.OS === 'ios' ? 40 : 24, borderTopWidth: 1 },
+  resetBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderRadius: getRadius(56), borderWidth: 1 },
   resetBtnText: { fontSize: 15, fontWeight: '800', color: '#64748b' },
-  applyBtn: { flex: 2, backgroundColor: Colors.light.tint, paddingVertical: 16, alignItems: 'center', borderRadius: getRadius(56) },
+  applyBtn: { flex: 2, paddingVertical: 16, alignItems: 'center', borderRadius: getRadius(56) },
   applyBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
 });

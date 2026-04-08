@@ -117,7 +117,10 @@ export async function scheduleNotification(
         sound: true,
         priority: Notifications.AndroidNotificationPriority.HIGH,
       },
-      trigger: triggerDate,
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+      },
     });
 
     console.log('Notification scheduled:', identifier);

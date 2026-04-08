@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ViewProps,
   Platform,
+  useColorScheme,
 } from 'react-native';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/theme';
 
 interface ScreenWrapperProps extends ViewProps {
   children: React.ReactNode;
@@ -21,19 +23,25 @@ interface ScreenWrapperProps extends ViewProps {
 export const ScreenWrapper = ({ 
   children, 
   edges = ['top'], 
-  backgroundColor = '#fff',
-  statusBarStyle = 'dark',
+  backgroundColor,
+  statusBarStyle,
   style,
   ...props 
 }: ScreenWrapperProps) => {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  
+  const finalBackgroundColor = backgroundColor || theme.background;
+  const finalStatusBarStyle = statusBarStyle || (colorScheme === 'dark' ? 'light' : 'dark');
+
   return (
     <SafeAreaView 
-      style={[styles.container, { backgroundColor }]} 
+      style={[styles.container, { backgroundColor: finalBackgroundColor }]} 
       edges={edges}
       {...props}
     >
       <StatusBar 
-        barStyle={statusBarStyle === 'light' ? 'light-content' : 'dark-content'}
+        barStyle={finalStatusBarStyle === 'light' ? 'light-content' : 'dark-content'}
         backgroundColor={Platform.OS === 'android' ? 'transparent' : undefined}
         translucent={true}
       />

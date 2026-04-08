@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { getApiKey, getApiBaseUrl } from './secure-storage';
+import { getApiKey, getApiBaseUrl } from '../storage/secure-storage';
 
 const DEFAULT_API_BASE_URL = __DEV__
   ? Platform.OS === 'android'

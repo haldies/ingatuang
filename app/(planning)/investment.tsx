@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TextInput, StyleSheet, useColorScheme as useNativeColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { formatCurrency } from '@/lib/utils/format';
 import { Colors, getRadius } from '@/constants/theme';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
@@ -9,8 +8,11 @@ import { Header } from '@/components/ui/header';
 import { useTranslation } from 'react-i18next';
 
 export default function InvestmentCalculator() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [initialCapital, setInitialCapital] = useState('5000000');
   const [targetYears, setTargetYears] = useState('5');
   const [monthlyTopup, setMonthlyTopup] = useState('1000000');
@@ -32,10 +34,10 @@ export default function InvestmentCalculator() {
   }, [initialCapital, targetYears, monthlyTopup, annualRoi]);
 
   return (
-    <ScreenWrapper backgroundColor="#fff">
+    <ScreenWrapper backgroundColor={theme.background}>
       <Header title={t('investment.header')} />
       <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        <View style={[styles.resultCard, { borderRadius: getRadius(220, 'large'), backgroundColor: Colors.light.tint }]}>
+        <View style={[styles.resultCard, { borderRadius: getRadius(220, 'large'), backgroundColor: theme.tint, shadowColor: theme.tint }]}>
           <Text style={styles.resultLabel}>{t('investment.future_value')}</Text>
           <Text style={styles.resultAmount}>{formatCurrency(result.total)}</Text>
           <View style={styles.resDivider} />
@@ -46,15 +48,74 @@ export default function InvestmentCalculator() {
         </View>
 
         <View style={styles.form}>
-           <View style={[styles.inputBox, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>{t('investment.initial_amount_label')}</Text><TextInput style={styles.inputText} keyboardType="numeric" value={initialCapital} onChangeText={setInitialCapital} /></View>
-           <View style={[styles.inputBox, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>{t('investment.monthly_topup_label')}</Text><TextInput style={styles.inputText} keyboardType="numeric" value={monthlyTopup} onChangeText={setMonthlyTopup} /></View>
+           <View style={[styles.inputBox, { 
+             borderRadius: getRadius(100), 
+             backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+             borderColor: isDark ? '#262626' : '#f1f5f9' 
+           }]}>
+             <Text style={styles.inputLabel}>{t('investment.initial_amount_label')}</Text>
+             <TextInput 
+               style={[styles.inputText, { color: theme.text }]} 
+               keyboardType="numeric" 
+               value={initialCapital} 
+               onChangeText={setInitialCapital} 
+               placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+             />
+           </View>
+           <View style={[styles.inputBox, { 
+             borderRadius: getRadius(100), 
+             backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+             borderColor: isDark ? '#262626' : '#f1f5f9' 
+           }]}>
+             <Text style={styles.inputLabel}>{t('investment.monthly_topup_label')}</Text>
+             <TextInput 
+               style={[styles.inputText, { color: theme.text }]} 
+               keyboardType="numeric" 
+               value={monthlyTopup} 
+               onChangeText={setMonthlyTopup} 
+               placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+             />
+           </View>
            <View style={styles.row}>
-              <View style={[styles.inputBox, styles.flex1, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>{t('investment.years_label')}</Text><TextInput style={styles.inputText} keyboardType="numeric" value={targetYears} onChangeText={setTargetYears} /></View>
-              <View style={[styles.inputBox, styles.flex1, { borderRadius: getRadius(100) }]}><Text style={styles.inputLabel}>{t('investment.return_rate_label')}</Text><TextInput style={styles.inputText} keyboardType="numeric" value={annualRoi} onChangeText={setAnnualRoi} /></View>
+              <View style={[styles.inputBox, styles.flex1, { 
+                borderRadius: getRadius(100), 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#f1f5f9' 
+              }]}>
+                <Text style={styles.inputLabel}>{t('investment.years_label')}</Text>
+                <TextInput 
+                  style={[styles.inputText, { color: theme.text }]} 
+                  keyboardType="numeric" 
+                  value={targetYears} 
+                  onChangeText={setTargetYears} 
+                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                />
+              </View>
+              <View style={[styles.inputBox, styles.flex1, { 
+                borderRadius: getRadius(100), 
+                backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+                borderColor: isDark ? '#262626' : '#f1f5f9' 
+              }]}>
+                <Text style={styles.inputLabel}>{t('investment.return_rate_label')}</Text>
+                <TextInput 
+                  style={[styles.inputText, { color: theme.text }]} 
+                  keyboardType="numeric" 
+                  value={annualRoi} 
+                  onChangeText={setAnnualRoi} 
+                  placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                />
+              </View>
            </View>
         </View>
 
-        <View style={[styles.infoBox, { borderRadius: getRadius(120) }]}><Ionicons name="information-circle-outline" size={18} color="#047857" style={{ marginBottom: 8 }} /><Text style={styles.infoText}>{t('investment.info_text')}</Text></View>
+        <View style={[styles.infoBox, { 
+          borderRadius: getRadius(120),
+          backgroundColor: isDark ? theme.tint + '15' : theme.tint + '10',
+          borderColor: isDark ? theme.tint + '25' : theme.tint + '20',
+        }]}>
+          <Ionicons name="information-circle-outline" size={18} color={theme.tint} style={{ marginBottom: 8 }} />
+          <Text style={[styles.infoText, { color: isDark ? '#94a3b8' : '#065f46' }]}>{t('investment.info_text')}</Text>
+        </View>
       </ScrollView>
     </ScreenWrapper>
   );
@@ -62,7 +123,7 @@ export default function InvestmentCalculator() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  resultCard: { padding: 28, marginBottom: 24, elevation: 8, shadowColor: Colors.light.tint, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 15 },
+  resultCard: { padding: 28, marginBottom: 24, elevation: 8, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 15 },
   resultLabel: { fontSize: 11, fontWeight: '800', color: 'rgba(255,255,255,0.7)', letterSpacing: 1 },
   resultAmount: { fontSize: 30, fontWeight: '900', color: '#fff', marginVertical: 8 },
   resDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginVertical: 20 },
@@ -71,11 +132,11 @@ const styles = StyleSheet.create({
   resSubAmount: { fontSize: 14, fontWeight: '800', color: '#fff' },
   profitAmount: { fontSize: 14, fontWeight: '800', color: '#fff' },
   form: { gap: 16 },
-  inputBox: { padding: 18, backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#f1f5f9' },
+  inputBox: { padding: 18, borderWidth: 1 },
   inputLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', marginBottom: 6, letterSpacing: 0.5 },
-  inputText: { fontSize: 18, fontWeight: '900', color: '#0f172a', padding: 0 },
+  inputText: { fontSize: 18, fontWeight: '900', padding: 0 },
   row: { flexDirection: 'row', gap: 12 },
   flex1: { flex: 1 },
-  infoBox: { marginTop: 32, padding: 20, backgroundColor: '#ecfdf5', borderWidth: 1, borderColor: '#d1fae5' },
-  infoText: { fontSize: 12, color: '#065f46', lineHeight: 20, fontWeight: '500' },
+  infoBox: { marginTop: 32, padding: 20, borderWidth: 1 },
+  infoText: { fontSize: 12, lineHeight: 20, fontWeight: '700' },
 });

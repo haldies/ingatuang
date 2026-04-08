@@ -1,5 +1,16 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Linking, Platform, Modal, Pressable } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView, 
+  Linking, 
+  Platform, 
+  Modal, 
+  Pressable,
+  useColorScheme as useNativeColorScheme,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { storage } from '@/lib/storage/storage-adapter';
@@ -14,10 +25,13 @@ import { updateGlobalCurrency } from '@/lib/utils/format';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import ShortcutMenuItem from '@/components/settings/ShortcutMenuItem';
-import { getRadius } from '@/constants/theme';
+import { Colors, getRadius } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const colorScheme = useNativeColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   // Sheet State
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -133,18 +147,26 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <ScreenWrapper backgroundColor="#fff">
+    <ScreenWrapper backgroundColor={theme.background}>
       <Header title={t('settings.header')} hideBack />
       
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* PREMIUM BANNER */}
         <TouchableOpacity 
-          style={styles.premiumBanner} 
+          style={[
+            styles.premiumBanner, 
+            { 
+              backgroundColor: isDark ? '#171717' : '#0f172a',
+              borderColor: isDark ? '#262626' : 'transparent',
+              borderWidth: isDark ? 1 : 0,
+              borderRadius: getRadius(80) 
+            }
+          ]} 
           onPress={() => router.push('/premium')} 
           activeOpacity={0.9}
         >
           <View style={styles.premiumTextContainer}>
-            <View style={styles.proBadge}>
+            <View style={[styles.proBadge, { backgroundColor: theme.tint, borderRadius: getRadius(22) }]}>
               <Text style={styles.proBadgeText}>PRO</Text>
             </View>
             <View>
@@ -152,75 +174,75 @@ export default function ProfileScreen() {
               <Text style={styles.proSubtitle}>Buka fitur premium & laporan detail</Text>
             </View>
           </View>
-          <View style={styles.upgradeBtn}>
+          <View style={[styles.upgradeBtn, { borderRadius: getRadius(40, 'small') }]}>
             <Feather name="chevron-right" size={20} color="#fff" />
           </View>
         </TouchableOpacity>
 
         {/* MENU GROUP 1: PREFERENCES */}
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => openSheet('language')}>
-            <Feather name="globe" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>{t('settings.language')}</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => openSheet('language')}>
+            <Feather name="globe" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.language')}</Text>
             <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{i18n.language === 'id' ? 'ID' : 'EN'}</Text>
+              <Text style={[styles.badgeText, { backgroundColor: isDark ? '#171717' : '#f1f5f9' }]}>{i18n.language === 'id' ? 'ID' : 'EN'}</Text>
               <Feather name="chevron-right" size={14} color="#9ca3af" />
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => openSheet('currency')}>
-            <Feather name="dollar-sign" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>{t('settings.currency')}</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => openSheet('currency')}>
+            <Feather name="dollar-sign" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.currency')}</Text>
             <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{currentCurrency}</Text>
+              <Text style={[styles.badgeText, { backgroundColor: isDark ? '#171717' : '#f1f5f9' }]}>{currentCurrency}</Text>
               <Feather name="chevron-right" size={14} color="#9ca3af" />
             </View>
           </TouchableOpacity>
 
           <ShortcutMenuItem />
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/wallets')}>
-            <Feather name="credit-card" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>Dompet & Rekening</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/wallets')}>
+            <Feather name="credit-card" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>Dompet & Rekening</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/subscriptions')}>
-            <Feather name="calendar" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>Kelola Langganan</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/subscriptions')}>
+            <Feather name="calendar" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>Kelola Langganan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/privacy-security')}>
-            <Feather name="lock" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>Privasi & Keamanan</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/privacy-security')}>
+            <Feather name="lock" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>Privasi & Keamanan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/(settings)/stats')}>
-            <Feather name="bar-chart-2" size={18} color="#374151" />
-            <Text style={styles.menuTitle}>Statistik & Laporan</Text>
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/stats')}>
+            <Feather name="bar-chart-2" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>Statistik & Laporan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
         </View>
 
         {/* MENU GROUP 2: DEV TOOLS */}
-        <View style={styles.devSection}>
+        <View style={[styles.devSection, { borderTopColor: isDark ? '#171717' : '#f8fafc' }]}>
           <Text style={styles.sectionTitle}>{t('settings.dev_tools')}</Text>
           <View style={styles.menuContainer}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleTestNotification}>
-              <Feather name="bell" size={18} color="#374151" />
-              <Text style={styles.menuTitle}>{t('settings.test_notification')}</Text>
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleTestNotification}>
+              <Feather name="bell" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+              <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.test_notification')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.menuItem} onPress={handleSeedData}>
-              <Feather name="database" size={18} color="#374151" />
-              <Text style={styles.menuTitle}>{t('settings.add_sample')}</Text>
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleSeedData}>
+              <Feather name="database" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+              <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.add_sample')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleClearData}>
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleClearData}>
               <Feather name="trash-2" size={18} color="#ef4444" />
               <Text style={[styles.menuTitle, { color: '#ef4444' }]}>{t('settings.clear_data')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
@@ -241,10 +263,10 @@ export default function ProfileScreen() {
         onRequestClose={() => setSheetVisible(false)}
       >
         <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)}>
-          <View style={styles.sheetContent}>
+          <View style={[styles.sheetContent, { backgroundColor: theme.background, borderTopLeftRadius: getRadius(320, 'large'), borderTopRightRadius: getRadius(320, 'large') }]}>
             <View style={styles.sheetHeader}>
-              <View style={styles.sheetHandle} />
-              <Text style={styles.sheetTitle}>
+              <View style={[styles.sheetHandle, { backgroundColor: isDark ? '#262626' : '#e2e8f0' }]} />
+              <Text style={[styles.sheetTitle, { color: theme.text }]}>
                 {sheetType === 'language' ? t('settings.select_language') : t('settings.select_currency')}
               </Text>
             </View>
@@ -254,33 +276,33 @@ export default function ProfileScreen() {
                 languages.map((lang) => (
                   <TouchableOpacity 
                     key={lang.code} 
-                    style={styles.sheetItem} 
+                    style={[styles.sheetItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
                     onPress={() => handleSelectLanguage(lang.code)}
                   >
                     <Text style={styles.sheetEmoji}>{lang.flag}</Text>
-                    <Text style={[styles.sheetItemText, i18n.language === lang.code && styles.sheetItemActive]}>
+                    <Text style={[styles.sheetItemText, { color: theme.text }, i18n.language === lang.code && styles.sheetItemActive]}>
                       {lang.name}
                     </Text>
-                    {i18n.language === lang.code && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
+                    {i18n.language === lang.code && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
                   </TouchableOpacity>
                 ))
               ) : (
                 currencies.map((curr) => (
                   <TouchableOpacity 
                     key={curr.code} 
-                    style={styles.sheetItem} 
+                    style={[styles.sheetItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
                     onPress={() => handleSelectCurrency(curr.code)}
                   >
-                    <View style={styles.currencyIcon}>
-                      <Text style={styles.currencySymbol}>{curr.symbol}</Text>
+                    <View style={[styles.currencyIcon, { backgroundColor: isDark ? '#171717' : '#f1f5f9', borderRadius: getRadius(120, 'small') }]}>
+                      <Text style={[styles.currencySymbol, { color: theme.text }]}>{curr.symbol}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.sheetItemText, currentCurrency === curr.code && styles.sheetItemActive]}>
+                      <Text style={[styles.sheetItemText, { color: theme.text }, currentCurrency === curr.code && styles.sheetItemActive]}>
                         {curr.code}
                       </Text>
                       <Text style={styles.currencyName}>{curr.name}</Text>
                     </View>
-                    {currentCurrency === curr.code && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
+                    {currentCurrency === curr.code && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
                   </TouchableOpacity>
                 ))
               )}
@@ -307,8 +329,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
     padding: 20,
-    borderRadius: getRadius(80), // Auto-calculate based on height 80
-    backgroundColor: '#0f172a',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -320,10 +340,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   proBadge: {
-    backgroundColor: '#3b82f6',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: getRadius(22), // Small badge radius
   },
   proBadgeText: {
     color: '#fff',
@@ -343,7 +361,6 @@ const styles = StyleSheet.create({
   upgradeBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -356,13 +373,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
     gap: 16,
   },
   menuTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1e293b',
   },
   badgeContainer: {
     flexDirection: 'row',
@@ -375,7 +390,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: '#64748b',
-    backgroundColor: '#f1f5f9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -384,7 +398,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingTop: 24,
     borderTopWidth: 8,
-    borderTopColor: '#f8fafc',
   },
   sectionTitle: {
     fontSize: 11,
@@ -409,9 +422,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: getRadius(320, 'large'), // 32pt proporsional
-    borderTopRightRadius: getRadius(320, 'large'),
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
     maxHeight: '80%',
   },
@@ -423,14 +433,12 @@ const styles = StyleSheet.create({
   sheetHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#e2e8f0',
     borderRadius: 2,
     marginBottom: 20,
   },
   sheetTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#0f172a',
   },
   sheetList: {
     paddingHorizontal: 20,
@@ -440,7 +448,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
     gap: 16,
   },
   sheetEmoji: {
@@ -450,24 +457,19 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#475569',
   },
   sheetItemActive: {
-    color: '#0f172a',
     fontWeight: '800',
   },
   currencyIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
   },
   currencySymbol: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#0f172a',
   },
   currencyName: {
     fontSize: 12,
