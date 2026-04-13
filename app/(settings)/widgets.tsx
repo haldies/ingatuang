@@ -5,35 +5,35 @@ import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { Colors, getRadius } from '@/constants/theme';
 
-export default function ShortcutsIosScreen() {
+export default function WidgetsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
-  const shortcutItems = [
+  const widgetItems = [
     {
       id: 'ai',
-      title: 'Catat Cepat (AI)',
-      command: 'Siri: "Catat [pesan] di IngatUang"',
+      title: 'Voice Add (AI)',
+      command: 'Katakan: "Ok Google, catat..."',
       icon: 'mic',
       color: '#3b82f6',
     },
     {
       id: 'manual',
-      title: 'Catat Transaksi',
-      command: 'Input manual otomatis',
-      icon: 'edit-3',
+      title: 'Manual Widget',
+      command: 'Input form cepat dari Home Screen',
+      icon: 'layout',
       color: '#10b981',
     },
   ];
 
   return (
     <ScreenWrapper backgroundColor={theme.background}>
-      <Header title="Siri Shortcuts" />
+      <Header title="Widgets" />
 
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.list}>
-          {shortcutItems.map((item) => (
+          {widgetItems.map((item) => (
             <View 
               key={item.id} 
               style={[
@@ -58,7 +58,7 @@ export default function ShortcutsIosScreen() {
 
         <View style={styles.footer}>
           <Text style={[styles.footerText, { color: isDark ? '#404040' : '#94a3b8' }]}>
-            Pintasan ini terintegrasi otomatis dengan sistem iOS.
+            Fitur ini memanfaatkan asisten suara dan widget untuk mempercepat pencatatan.
           </Text>
         </View>
       </ScrollView>

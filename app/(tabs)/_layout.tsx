@@ -87,15 +87,15 @@ export default function TabLayout() {
             borderTopWidth: 1,
             borderTopColor: '#f1f5f9',
             paddingTop: 10,
-            paddingBottom: Platform.select({ ios: insets.bottom > 0 ? insets.bottom + 8 : 24, default: 20 }),
-            height: Platform.select({ ios: insets.bottom > 0 ? 88 + insets.bottom / 2 : 72, default: 72 }),
+            paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15,
+            height: (insets.bottom > 0 ? 70 + insets.bottom : 70),
             elevation: 0,
             shadowOpacity: 0,
           },
           tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginBottom: 4 },
         }}>
         <Tabs.Screen name="index" options={{ title: t('home'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} /> }} />
-        <Tabs.Screen name="explore" options={{ title: t('stats'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'pie-chart' : 'pie-chart-outline'} size={24} color={color} /> }} />
+        <Tabs.Screen name="stats" options={{ title: t('stats'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'pie-chart' : 'pie-chart-outline'} size={24} color={color} /> }} />
         <Tabs.Screen
           name="add"
           options={{
@@ -131,8 +131,8 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen name="budgeting" options={{ title: t('budgeting'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} /> }} />
-        <Tabs.Screen name="profile" options={{ title: t('setting'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} /> }} />
+        <Tabs.Screen name="accounts" options={{ title: t('accounts'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'wallet' : 'wallet-outline'} size={24} color={color} /> }} />
+        <Tabs.Screen name="settings" options={{ title: t('settings_tab'), tabBarIcon: ({ color, focused }) => <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} /> }} />
       </Tabs>
 
       <AddMenuModal visible={isMenuOpen} onClose={() => setIsMenuOpen(false)} onTransactionPress={handleTransactionPress} onQuickAddPress={handleQuickAddPress} onSubscriptionPress={handleBudgetingPress} onSplitBillPress={handleSplitBillPress} />

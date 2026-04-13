@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
 
-export default function ShortcutMenuItem() {
+export default function WidgetMenuItem() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
@@ -12,13 +12,11 @@ export default function ShortcutMenuItem() {
   return (
     <TouchableOpacity 
       style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
-      onPress={() => router.push('/(settings)/shortcuts')}
+      onPress={() => router.push('/(settings)/widgets' as any)}
     >
       <Feather name="layout" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.menuTitle, { color: theme.text }]}>Widget Settings</Text>
-        <Text style={styles.menuSubtitle}>Kelola Widget Home Screen</Text>
-      </View>
+      <Text style={[styles.menuTitle, { color: theme.text }]}>Widgets</Text>
+      <View style={{ flex: 1 }} />
       <Feather name="chevron-right" size={18} color="#9ca3af" />
     </TouchableOpacity>
   );

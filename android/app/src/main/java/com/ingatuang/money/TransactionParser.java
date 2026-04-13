@@ -66,72 +66,39 @@ public class TransactionParser {
     }
 
     private static String detectType(String text) {
-        if (text.contains("terima") || text.contains("dapat") || 
-            text.contains("gaji") || text.contains("bonus") ||
-            text.contains("income") || text.contains("masuk")) {
-            return "INCOME";
-        }
-        return "EXPENSE";
+        return TransactionParserCore.detectType(text);
     }
 
     private static double extractAmount(String text) {
-        // Pattern untuk angka dengan atau tanpa separator dan unit
-        // Improved pattern to capture numbers after "rp" prefix
-        Pattern pattern = Pattern.compile("(?:rp\\s*)?([\\d]+(?:[.,][\\d]+)?)\\s*(ribu|rb|k|juta|jt|m|ratus)?", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(text);
+        return TransactionParserCore.extractAmount(text);
+    }
 
-        double maxAmount = 0;
-        boolean foundWithUnit = false;
+    private static String detectCategory(Context context, String text, String type) {
+        loadRules(context);
         
-        while (matcher.find()) {
-            String numberStr = matcher.group(1).replace(",", ".");
-            String unit = matcher.group(2);
+        // Convert rules to Core data objects
+        TransactionParserCore.CategoryRuleData[] incomeCore = convertRules(incomeRules);
+        TransactionParserCore.CategoryRuleData[] expenseCore = convertRules(expenseRules);
+        
+        return TransactionParserCore.detectCategoryFromRules(
+            text, type, incomeCore, expenseCore, MIN_CONFIDENCE_THRESHOLD
+        );
+    }
 
-            try {
-                double number = Double.parseDouble(numberStr);
-
-                // Apply multiplier
-                if (unit != null) {
-                    String unitLower = unit.toLowerCase();
-                    if (unitLower.equals("ribu") || unitLower.equals("rb") || unitLower.equals("k")) {
-                        number *= 1000;
-                    } else if (unitLower.equals("juta") || unitLower.equals("jt") || unitLower.equals("m")) {
-                        number *= 1000000;
-                    } else if (unitLower.equals("ratus")) {
-                        number *= 100;
-                    }
-                }
-
-                // Priority logic:
-                // 1. Numbers with units (e.g., "10 ribu", "5k") - highest priority
-                // 2. Numbers >= 1000 (e.g., "10000", "5000") - likely prices
-                // 3. Small numbers (< 1000) - likely quantities, only use if nothing else found
-                
-                if (unit != null) {
-                    // Number with unit - highest priority
-                    if (!foundWithUnit || number > maxAmount) {
-                        maxAmount = number;
-                        foundWithUnit = true;
-                    }
-                } else if (number >= 1000) {
-                    // Large number without unit - second priority
-                    // Only update if we haven't found a number with unit yet
-                    if (!foundWithUnit && number > maxAmount) {
-                        maxAmount = number;
-                    }
-                } else {
-                    // Small number (< 1000) - lowest priority
-                    // Only use if we haven't found anything else
-                    if (maxAmount == 0 && !foundWithUnit) {
-                        maxAmount = number;
-                    }
-                }
-            } catch (NumberFormatException e) {
-                // Skip invalid numbers
-            }
+    private static TransactionParserCore.CategoryRuleData[] convertRules(CategoryRule[] rules) {
+        if (rules == null) return null;
+        TransactionParserCore.CategoryRuleData[] coreRules = new TransactionParserCore.CategoryRuleData[rules.length];
+        for (int i = 0; i < rules.length; i++) {
+            coreRules[i] = new TransactionParserCore.CategoryRuleData(
+                rules[i].categoryId, rules[i].priority, rules[i].keywords
+            );
         }
+        return coreRules;
+    }
 
-        return maxAmount;
+    private static String extractName(String text, double amount) {
+        // Use Core implementation for notes extraction
+        return TransactionParserCore.extractNotes(text);
     }
 
     // Merchant & Keyword Rules Engine
@@ -194,7 +161,7 @@ public class TransactionParser {
     private static CategoryRule[] expenseRules = null;
     
     // Minimum confidence threshold to accept a category
-    private static final int MIN_CONFIDENCE_THRESHOLD = 30;
+    private static final int MIN_CONFIDENCE_THRESHOLD = 25;
     
     // Load rules from JSON file
     private static void loadRules(Context context) {
@@ -267,99 +234,6 @@ public class TransactionParser {
             new CategoryRule("8", 70, new String[]{"hiburan", "nonton", "game"}),
             new CategoryRule("7", 50, new String[]{"belanja", "beli", "shopping"})
         };
-    }
-    
-    private static String detectCategory(Context context, String text, String type) {
-        // Load rules if not loaded yet
-        loadRules(context);
-        
-        text = text.toLowerCase();
-        
-        if (type.equals("INCOME")) {
-            // Find best matching income category
-            CategoryMatch bestMatch = findBestMatch(incomeRules, text);
-            
-            // If confidence is too low, return "Other Income"
-            if (bestMatch == null || bestMatch.confidence < MIN_CONFIDENCE_THRESHOLD) {
-                return "4"; // Other Income
-            }
-            
-            return bestMatch.categoryId;
-        } else {
-            // Find best matching expense category
-            CategoryMatch bestMatch = findBestMatch(expenseRules, text);
-            
-            // If confidence is too low, return "Other Expense"
-            if (bestMatch == null || bestMatch.confidence < MIN_CONFIDENCE_THRESHOLD) {
-                return "12"; // Other Expense
-            }
-            
-            return bestMatch.categoryId;
-        }
-    }
-    
-    // Find best matching category with confidence scoring
-    private static CategoryMatch findBestMatch(CategoryRule[] rules, String text) {
-        CategoryMatch bestMatch = null;
-        int highestConfidence = 0;
-        
-        // Sort rules by priority (highest first)
-        CategoryRule[] sortedRules = rules.clone();
-        java.util.Arrays.sort(sortedRules, new java.util.Comparator<CategoryRule>() {
-            @Override
-            public int compare(CategoryRule a, CategoryRule b) {
-                return Integer.compare(b.priority, a.priority);
-            }
-        });
-        
-        // Check each rule and calculate confidence
-        for (CategoryRule rule : sortedRules) {
-            if (rule.matches(text)) {
-                int confidence = rule.getConfidence(text);
-                
-                // Keep track of best match
-                if (confidence > highestConfidence) {
-                    highestConfidence = confidence;
-                    bestMatch = new CategoryMatch(rule.categoryId, confidence);
-                }
-                
-                // If we found a high-confidence match from high-priority rule, stop
-                if (confidence >= 80 && rule.priority >= 90) {
-                    break;
-                }
-            }
-        }
-        
-        return bestMatch;
-    }
-
-    private static String extractName(String text, double amount) {
-        // Remove the amount that was detected (with some tolerance for formatting)
-        // Only remove numbers that match the amount or have units
-        String name = text;
-        
-        // Remove amount with units (these are definitely prices, not quantities)
-        name = name.replaceAll("\\b\\d+[.,]?\\d*\\s*(ribu|rb|k|juta|jt|m|ratus)\\b", "").trim();
-        
-        // Remove large numbers without units (>= 1000, likely prices)
-        name = name.replaceAll("\\b\\d{4,}[.,]?\\d*\\b", "").trim();
-        
-        // Keep small numbers (1-999) as they're likely quantities (e.g., "2 nasi goreng")
-        
-        // Remove common action words with word boundaries
-        name = name.replaceAll("\\b(beli|bayar|untuk|ke|di|dari|terima|dapat)\\b", "").trim();
-        
-        // Remove extra spaces
-        name = name.replaceAll("\\s+", " ").trim();
-        
-        if (!name.isEmpty()) {
-            // Capitalize first letter
-            name = name.substring(0, 1).toUpperCase() + name.substring(1);
-        } else {
-            name = "Transaction";
-        }
-
-        return name;
     }
 
     public static class Transaction {

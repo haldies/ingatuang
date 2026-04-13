@@ -38,7 +38,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 44) / 2;
 
-export default function BudgetingWalletScreen() {
+export default function AccountsScreen() {
   const { t } = useTranslation();
   const colorScheme = useNativeColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
@@ -173,13 +173,15 @@ export default function BudgetingWalletScreen() {
               { 
                 backgroundColor: colorScheme === 'dark' ? '#171717' : '#f8fafc',
                 borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
-                borderRadius: getRadius(150) 
+                borderRadius: getRadius(100) 
               }
             ]}>
               <View style={styles.summaryInfo}>
                 <View>
-                  <Text style={styles.summaryLabel}>TOTAL ANGGARAN</Text>
-                  <Text style={[styles.summaryAmount, { color: theme.text }]}>{formatCurrency(budgetSummary?.totalBudget || 0)}</Text>
+                  <Text style={styles.summaryLabel}>SISA ANGGARAN</Text>
+                  <Text style={[styles.summaryAmount, { color: (budgetSummary?.remaining || 0) < 0 ? '#ef4444' : theme.tint }]}>
+                    {formatCurrency(budgetSummary?.remaining || 0)}
+                  </Text>
                 </View>
                 <View style={[styles.summaryBadge, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0' }]}>
                   <Text style={[styles.badgeText, { color: theme.text }]}>{budgetSummary?.percentage.toFixed(0)}%</Text>
@@ -187,18 +189,6 @@ export default function BudgetingWalletScreen() {
               </View>
               <View style={[styles.progBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0', borderRadius: 4 }]}>
                 <View style={[styles.progFill, { backgroundColor: theme.tint, width: `${Math.min(budgetSummary?.percentage || 0, 100)}%` }]} />
-              </View>
-              <View style={styles.summaryFooter}>
-                <View><Text style={styles.subLabel}>TERPAKAI</Text><Text style={[styles.subAmount, { color: theme.text }]}>{formatCurrency(budgetSummary?.totalSpent || 0)}</Text></View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.subLabel}>SISA</Text>
-                  <Text style={[
-                    styles.subAmount, 
-                    { color: (budgetSummary?.remaining || 0) < 0 ? '#ef4444' : theme.tint }
-                  ]}>
-                    {formatCurrency(budgetSummary?.remaining || 0)}
-                  </Text>
-                </View>
               </View>
             </View>
             
@@ -216,8 +206,10 @@ export default function BudgetingWalletScreen() {
                   <Text style={styles.catEmoji}>{cat.categoryIcon}</Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Text style={[styles.itemName, { color: theme.text }]}>{cat.categoryName}</Text>
-                  <Text style={styles.itemLimit}>{formatCurrency(cat.spent)} / {formatCurrency(cat.budget)}</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={[styles.itemName, { color: theme.text }]}>{cat.categoryName}</Text>
+                    <Text style={[styles.itemRefText, { color: cat.percentage > 90 ? '#ef4444' : '#94a3b8' }]}>{cat.percentage.toFixed(0)}%</Text>
+                  </View>
                   <View style={[styles.itemProgBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
                     <View style={[
                       styles.itemProgFill, 
@@ -388,26 +380,27 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 13, fontWeight: '700', color: '#64748b' },
   addIconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingVertical: 16, paddingBottom: 100 },
-  summaryCard: { marginHorizontal: 20, padding: 24, borderWidth: 1, marginBottom: 24 },
-  summaryInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  summaryLabel: { fontSize: 10, fontWeight: '800', color: '#94a3b8', letterSpacing: 1 },
-  summaryAmount: { fontSize: 26, fontWeight: '900' },
-  summaryBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 12, fontWeight: '800' },
-  progBar: { height: 8, overflow: 'hidden', marginBottom: 16 },
+  summaryCard: { marginHorizontal: 20, padding: 16, borderWidth: 1, marginBottom: 16 },
+  summaryInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  summaryLabel: { fontSize: 9, fontWeight: '800', color: '#94a3b8', letterSpacing: 0.5 },
+  summaryAmount: { fontSize: 22, fontWeight: '900' },
+  summaryBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { fontSize: 11, fontWeight: '800' },
+  progBar: { height: 6, overflow: 'hidden' },
   progFill: { height: '100%' },
   summaryFooter: { flexDirection: 'row', justifyContent: 'space-between' },
   subLabel: { fontSize: 9, fontWeight: '700', color: '#94a3b8' },
-  subAmount: { fontSize: 14, fontWeight: '800' },
-  sectionHeader: { paddingHorizontal: 24, marginBottom: 16 },
-  sectionTitle: { fontSize: 11, fontWeight: '900', color: '#94a3b8', letterSpacing: 1 },
-  budgetItem: { marginHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1 },
-  catIconBox: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
-  catEmoji: { fontSize: 22 },
-  itemName: { fontSize: 15, fontWeight: '800' },
+  subAmount: { fontSize: 13, fontWeight: '800' },
+  sectionHeader: { paddingHorizontal: 24, marginBottom: 12 },
+  sectionTitle: { fontSize: 10, fontWeight: '900', color: '#94a3b8', letterSpacing: 1 },
+  budgetItem: { marginHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1 },
+  catIconBox: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  catEmoji: { fontSize: 20 },
+  itemName: { fontSize: 14, fontWeight: '700' },
+  itemRefText: { fontSize: 11, fontWeight: '800' },
   itemLimit: { fontSize: 12, color: '#64748b', fontWeight: '500', marginBottom: 8 },
-  itemProgBar: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  itemProgFill: { height: '100%', borderRadius: 3 },
+  itemProgBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
+  itemProgFill: { height: '100%', borderRadius: 2 },
   walletGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, justifyContent: 'space-between' },
   walletCard: { width: CARD_WIDTH, padding: 20, marginBottom: 16, borderWidth: 1.5 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

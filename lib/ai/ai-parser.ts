@@ -27,7 +27,7 @@ const incomeRules: CategoryRule[] = [
 
 const expenseRules: CategoryRule[] = [
   { categoryId: '9', priority: 100, keywords: ['tagihan', 'listrik', 'pulsa', 'wifi', 'internet', 'air', 'pdam', 'subscription', 'netflix', 'spotify'] },
-  { categoryId: '10', priority: 100, keywords: ['kesehatan', 'dokter', 'obat', 'apotek', 'rumah sakit', 'medical', 'vitamin'] },
+  { categoryId: '10', priority: 100, keywords: ['kesehatan', 'dokter', 'obat', 'apotek', 'rumah sakit', 'medical', 'vitamin', 'balsem'] },
   { categoryId: '11', priority: 100, keywords: ['pendidikan', 'sekolah', 'kuliah', 'kursus', 'buku', 'les'] },
   { categoryId: '5', priority: 90, keywords: ['makan', 'food', 'resto', 'warteg', 'kopi', 'cafe', 'lunch', 'dinner', 'breakfast', 'nasi', 'ayam', 'bakso', 'soto'] },
   { categoryId: '6', priority: 80, keywords: ['transport', 'bensin', 'grab', 'gojek', 'taxi', 'parkir', 'tol', 'fuel'] },
@@ -47,14 +47,28 @@ function extractAmount(text: string): number {
   let foundWithUnit = false;
 
   while ((match = regex.exec(lowerText)) !== null) {
-    let numberStr = match[1].replace(/,/g, '.');
-    const unit = match[2];
+    let numberStr = match[1];
     
-    // In case of dot thousands separator (ID style: 25.000), fix it
-    if (numberStr.includes('.') && numberStr.split('.').pop()?.length === 3) {
-      numberStr = numberStr.replace(/\./g, '');
+    // Robust separator logic (Indonesian focus)
+    if (numberStr.includes('.') && numberStr.includes(',')) {
+      if (numberStr.indexOf('.') < numberStr.indexOf(',')) {
+        numberStr = numberStr.replace(/\./g, '').replace(/,/g, '.');
+      } else {
+        numberStr = numberStr.replace(/,/g, '');
+      }
+    } else if (numberStr.includes('.') || numberStr.includes(',')) {
+      const sep = numberStr.includes('.') ? '.' : ',';
+      const parts = numberStr.split(sep);
+      if (parts.length > 1) {
+        if (parts[parts.length - 1].length === 3) {
+          numberStr = numberStr.split(sep).join('');
+        } else {
+          numberStr = numberStr.replace(sep, '.');
+        }
+      }
     }
 
+    const unit = match[2];
     let number = parseFloat(numberStr);
     if (isNaN(number)) continue;
 

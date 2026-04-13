@@ -39,7 +39,6 @@ const MENU_GROUPS: MenuGroup[] = [
     title_key: 'main_features',
     items: [
       { id: 'tax', title: 'Pajak PPh', icon: 'calculator-outline', isPrimary: true, route: '/tax-calculator' },
-      { id: 'wallets', title: 'Dompet', icon: 'wallet-outline', isPrimary: true, route: '/wallets' },
       { id: 'subscriptions', title: 'Tagihan', icon: 'calendar-outline', isPrimary: true, route: '/subscriptions' },
     ],
   },

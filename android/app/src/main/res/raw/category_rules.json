@@ -44,6 +44,9 @@
         "klinik", "clinic", "puskesmas", "posyandu",
         "obat", "medicine", "vitamin", "apotek", "pharmacy", "kimia farma", "guardian",
         "century", "viva", "k24", "resep",
+        "balsem", "salep", "tetes mata", "plester", "hansaplast", "betadine",
+        "minyak kayu putih", "minyak telon", "tolak angin", "antangin", "promag",
+        "antimo", "panadol", "bodrex", "Sanaflu", "antasida", "entrostop",
         "checkup", "check up", "medical", "lab", "laboratorium", "rontgen", "x-ray",
         "usg", "ct scan", "mri", "operasi", "surgery", "rawat inap", "rawat jalan",
         "vaksin", "vaccine", "imunisasi", "suntik", "infus", "terapi", "therapy"

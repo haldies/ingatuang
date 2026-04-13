@@ -24,10 +24,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { updateGlobalCurrency } from '@/lib/utils/format';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
-import ShortcutMenuItem from '@/components/settings/ShortcutMenuItem';
+import WidgetMenuItem from '@/components/settings/WidgetMenuItem';
 import { Colors, getRadius } from '@/constants/theme';
 
-export default function ProfileScreen() {
+export default function SettingsScreen() {
   const { t } = useTranslation();
   const colorScheme = useNativeColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
@@ -171,7 +171,6 @@ export default function ProfileScreen() {
             </View>
             <View>
               <Text style={styles.proTitle}>IngatUang PRO</Text>
-              <Text style={styles.proSubtitle}>Buka fitur premium & laporan detail</Text>
             </View>
           </View>
           <View style={[styles.upgradeBtn, { borderRadius: getRadius(40, 'small') }]}>
@@ -199,29 +198,17 @@ export default function ProfileScreen() {
             </View>
           </TouchableOpacity>
 
-          <ShortcutMenuItem />
-
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/wallets')}>
-            <Feather name="credit-card" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-            <Text style={[styles.menuTitle, { color: theme.text }]}>Dompet & Rekening</Text>
-            <Feather name="chevron-right" size={18} color="#9ca3af" />
-          </TouchableOpacity>
+          <WidgetMenuItem />
 
           <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/subscriptions')}>
             <Feather name="calendar" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-            <Text style={[styles.menuTitle, { color: theme.text }]}>Kelola Langganan</Text>
+            <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Kelola Langganan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
 
           <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/privacy-security')}>
             <Feather name="lock" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-            <Text style={[styles.menuTitle, { color: theme.text }]}>Privasi & Keamanan</Text>
-            <Feather name="chevron-right" size={18} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/stats')}>
-            <Feather name="bar-chart-2" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-            <Text style={[styles.menuTitle, { color: theme.text }]}>Statistik & Laporan</Text>
+            <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Privasi & Keamanan</Text>
             <Feather name="chevron-right" size={18} color="#9ca3af" />
           </TouchableOpacity>
         </View>
@@ -232,19 +219,19 @@ export default function ProfileScreen() {
           <View style={styles.menuContainer}>
             <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleTestNotification}>
               <Feather name="bell" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-              <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.test_notification')}</Text>
+              <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>{t('settings.test_notification')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
             
             <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleSeedData}>
               <Feather name="database" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-              <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.add_sample')}</Text>
+              <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>{t('settings.add_sample')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleClearData}>
               <Feather name="trash-2" size={18} color="#ef4444" />
-              <Text style={[styles.menuTitle, { color: '#ef4444' }]}>{t('settings.clear_data')}</Text>
+              <Text style={[styles.menuTitle, { color: '#ef4444', flex: 1 }]}>{t('settings.clear_data')}</Text>
               <Feather name="chevron-right" size={18} color="#9ca3af" />
             </TouchableOpacity>
           </View>
