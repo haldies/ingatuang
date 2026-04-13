@@ -30,6 +30,8 @@ interface AddTransactionModalProps {
   onSuccess?: () => void;
 }
 
+import { CustomAlert } from '@/components/ui/custom-alert';
+
 export function AddTransactionModal({
   visible,
   onClose,
@@ -54,6 +56,25 @@ export function AddTransactionModal({
     date: new Date(),
     notes: '',
   });
+
+  // Alert state
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    title: string;
+    message: string;
+    type?: 'success' | 'error' | 'warning' | 'info';
+    buttons?: Array<{ text: string; onPress?: () => void; style?: 'default' | 'cancel' | 'destructive' }>;
+  }>({
+    title: '',
+    message: '',
+    type: 'info',
+    buttons: [{ text: 'OK', style: 'default' }],
+  });
+
+  const showAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
+  };
 
   // Load categories
   useEffect(() => {
@@ -124,8 +145,12 @@ export function AddTransactionModal({
 
     setLoading(true);
 
+    setLoading(true);
+
     try {
-      if (transaction) {
+      const isNew = !transaction || transaction.id.startsWith('temp-');
+      
+      if (!isNew && transaction) {
         // Update
         await storage.updateTransaction(transaction.id, {
           type: formData.type,
@@ -166,6 +191,36 @@ export function AddTransactionModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!transaction) return;
+
+    showAlert({
+      title: 'Hapus Transaksi',
+      message: 'Apakah Anda yakin ingin menghapus transaksi ini?',
+      type: 'warning',
+      buttons: [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Hapus',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await storage.deleteTransaction(transaction.id);
+              onClose();
+              if (onSuccess) onSuccess();
+            } catch (error) {
+              console.error('Error deleting transaction:', error);
+              alert('Gagal menghapus transaksi');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    });
   };
 
   // Filter categories by type
@@ -220,9 +275,15 @@ export function AddTransactionModal({
               <Ionicons name="close" size={28} color={colorScheme === 'dark' ? '#a3a3a3' : '#6b7280'} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: theme.text }]}>
-              {transaction ? 'Edit Transaksi' : 'Tambah Transaksi'}
+              {transaction && !transaction.id.startsWith('temp-') ? 'Edit Transaksi' : 'Tambah Transaksi'}
             </Text>
-            <View style={styles.headerRightPlaceholder} />
+            <View style={styles.headerRightPlaceholder}>
+                {transaction && !transaction.id.startsWith('temp-') && (
+                  <TouchableOpacity onPress={handleDelete} style={styles.deleteBtn}>
+                    <Ionicons name="trash-outline" size={24} color="#ef4444" />
+                  </TouchableOpacity>
+                )}
+            </View>
           </View>
 
           <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -409,7 +470,7 @@ export function AddTransactionModal({
               disabled={loading}
             >
               <Text style={styles.submitBtnText}>
-                {loading ? 'Menyimpan...' : transaction ? 'Perbarui' : 'Simpan'}
+                {loading ? 'Menyimpan...' : (transaction && !transaction.id.startsWith('temp-') ? 'Perbarui' : 'Simpan')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -544,6 +605,15 @@ export function AddTransactionModal({
             </View>
           </View>
         )}
+
+        <CustomAlert
+          visible={alertVisible}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          buttons={alertConfig.buttons}
+          onClose={() => setAlertVisible(false)}
+        />
       </Animated.View>
     </Modal>
   );
@@ -561,7 +631,8 @@ const styles = StyleSheet.create({
   },
   closeBtn: { padding: 4, width: 40 },
   headerTitle: { fontSize: 20, fontWeight: '700' },
-  headerRightPlaceholder: { width: 40 },
+  headerRightPlaceholder: { width: 40, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { padding: 4 },
   container: { flex: 1, padding: 20 },
   section: { marginBottom: 20 },
   typeRow: { flexDirection: 'row', gap: 12 },

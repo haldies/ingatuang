@@ -166,7 +166,7 @@ export default function SettingsScreen() {
           activeOpacity={0.9}
         >
           <View style={styles.premiumTextContainer}>
-            <View style={[styles.proBadge, { backgroundColor: theme.tint, borderRadius: getRadius(22) }]}>
+            <View style={[styles.proBadge, { backgroundColor: '#6366F1', borderRadius: getRadius(22) }]}>
               <Text style={styles.proBadgeText}>PRO</Text>
             </View>
             <View>
@@ -199,6 +199,12 @@ export default function SettingsScreen() {
           </TouchableOpacity>
 
           <WidgetMenuItem />
+
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/categories')}>
+            <Feather name="grid" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Kelola Kategori</Text>
+            <Feather name="chevron-right" size={18} color="#9ca3af" />
+          </TouchableOpacity>
 
           <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/subscriptions')}>
             <Feather name="calendar" size={18} color={isDark ? '#94a3b8' : '#374151'} />

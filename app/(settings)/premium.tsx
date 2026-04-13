@@ -55,7 +55,7 @@ const PREMIUM_FEATURES = [
     icon: 'color-palette',
     title: 'Tema Kustom',
     description: 'Personalisasi tampilan aplikasi dengan beragam tema premium.',
-    color: '#F59E0B',
+    color: '#EC4899',
   },
   {
     order: 5,
@@ -98,7 +98,7 @@ export default function PremiumScreen() {
       />
       
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-        <Header title="Premium Access" transparent />
+        <Header title="Premium Access" transparent tintColor={isDark ? '#F8FAFC' : '#0F172A'} />
 
         <ScrollView 
           showsVerticalScrollIndicator={false}
@@ -110,12 +110,12 @@ export default function PremiumScreen() {
             style={styles.heroSection}
           >
             <View style={styles.premiumBadgeContainer}>
-              <Animated.View style={[styles.glowEffect, glowStyle, { borderRadius: getRadius(200, 'small') }]} />
+              <Animated.View style={[styles.glowEffect, glowStyle, { borderRadius: getRadius(200, 'small'), backgroundColor: '#6366F1' }]} />
               <LinearGradient
-                colors={['#F59E0B', '#D97706']}
+                colors={['#6366F1', '#A855F7']}
                 style={[styles.premiumBadge, { borderRadius: getRadius(200, 'small') }]}
               >
-                <Ionicons name="star" size={16} color="#000" />
+                <Ionicons name="star" size={16} color="#fff" />
                 <Text style={styles.premiumBadgeText}>PREMIUM ACCESS</Text>
               </LinearGradient>
             </View>
@@ -216,7 +216,7 @@ export default function PremiumScreen() {
       <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.footer, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
         <TouchableOpacity style={[styles.subscribeButton, { borderRadius: getRadius(160, 'small') }]} activeOpacity={0.8}>
           <LinearGradient
-            colors={['#F59E0B', '#D97706']}
+            colors={['#6366F1', '#A855F7']}
             style={styles.subscribeGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -224,7 +224,7 @@ export default function PremiumScreen() {
             <Text style={styles.subscribeButtonText}>
               {selectedPlan === 'yearly' ? 'Mulai Langganan Tahunan' : 'Mulai Langganan Bulanan'}
             </Text>
-            <Ionicons name="arrow-forward" size={20} color="#000" />
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </LinearGradient>
         </TouchableOpacity>
         
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     left: -4,
     right: -4,
     bottom: -4,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#6366F1',
     opacity: 0.5,
   },
   premiumBadge: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   premiumBadgeText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   planBadgeText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 10,
     fontWeight: '800',
   },
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   subscribeButtonText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '800',
   },

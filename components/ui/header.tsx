@@ -18,6 +18,7 @@ interface HeaderProps {
   onRightPress?: () => void;
   transparent?: boolean;
   hideBack?: boolean;
+  tintColor?: string;
 }
 
 export const Header = ({ 
@@ -27,7 +28,8 @@ export const Header = ({
   rightIcon,
   onRightPress,
   transparent, 
-  hideBack 
+  hideBack,
+  tintColor
 }: HeaderProps) => {
   const router = useRouter();
   const colorScheme = useNativeColorScheme() ?? 'light';
@@ -40,6 +42,8 @@ export const Header = ({
       router.back();
     }
   };
+
+  const headerTintColor = tintColor || (transparent ? (isDark ? '#fff' : '#0F172A') : theme.text);
 
   return (
     <View style={[
@@ -59,7 +63,7 @@ export const Header = ({
           <Feather 
             name="chevron-left" 
             size={24} 
-            color={transparent ? '#fff' : theme.text} 
+            color={headerTintColor} 
           />
         </TouchableOpacity>
       ) : (
@@ -68,7 +72,7 @@ export const Header = ({
       
       <Text style={[
         styles.title, 
-        { color: transparent ? '#fff' : theme.text },
+        { color: headerTintColor },
       ]} numberOfLines={1}>
         {title}
       </Text>

@@ -35,6 +35,7 @@ import { eventEmitter, EVENTS } from '@/lib/utils/events';
 import { updateWidget } from '@/lib/utils/widget';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import * as Linking from 'expo-linking';
 import { Colors, getRadius } from '@/constants/theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -134,6 +135,51 @@ export default function DashboardScreen() {
       subscription.remove();
     };
   }, [loadData]);
+
+  // Handle Deep Links (Assistant / Gemini)
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      const { hostname, queryParams } = Linking.parse(url);
+      
+      // Abaikan link internal Expo Development Client agar tidak mengotori log
+      if (hostname === 'expo-development-client') return;
+
+      console.log('🔗 [DeepLink] Received URL:', url);
+      console.log('🔗 [DeepLink] Query Params:', queryParams);
+      
+      if (queryParams?.assistant_action === 'add_transaction') {
+        const notes = queryParams?.notes as string;
+        const amountStr = queryParams?.amount as string;
+        console.log('🔗 [DeepLink] Action: add_transaction, Notes:', notes, 'Amount:', amountStr);
+        
+        const amount = parseFloat(amountStr) || 0;
+        
+        // Open modal with prefilled data
+        setSelectedTransaction({
+          id: 'temp-' + Date.now(),
+          type: 'EXPENSE',
+          amount: amount,
+          date: new Date().toISOString(),
+          notes: notes,
+          categoryId: '', // Will be selected in modal or default
+          createdAt: new Date().toISOString(),
+        });
+        setIsAddModalOpen(true);
+      }
+    };
+
+    // Get initial URL
+    Linking.getInitialURL().then(url => {
+      if (url) handleDeepLink(url);
+    });
+
+    // Listen for changes
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const goToPreviousMonth = () => {
     setCurrentDate(prev => {
