@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, useColorScheme as useNativeColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { storage, Category } from '@/lib/storage/storage-adapter';
@@ -7,10 +7,11 @@ import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function CategoriesScreen() {
   const { t } = useTranslation();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
   
@@ -48,7 +49,7 @@ export default function CategoriesScreen() {
 
       <View style={[styles.tabContainer, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
         <View style={[styles.tabContent, { 
-          backgroundColor: isDark ? '#1a1a1a' : '#f1f5f9',
+          backgroundColor: theme.card,
           borderRadius: getRadius(48, 'small')
         }]}>
           <TouchableOpacity
@@ -60,7 +61,7 @@ export default function CategoriesScreen() {
           >
             <Text style={[
               styles.tabText, 
-              { color: isDark ? '#94a3b8' : '#64748b' },
+              { color: theme.textSecondary },
               selectedType === 'EXPENSE' && { color: '#fff' }
             ]}>
               {t('dashboard.expense_label')}
@@ -75,7 +76,7 @@ export default function CategoriesScreen() {
           >
             <Text style={[
               styles.tabText, 
-              { color: isDark ? '#94a3b8' : '#64748b' },
+              { color: theme.textSecondary },
               selectedType === 'INCOME' && { color: '#fff' }
             ]}>
               {t('dashboard.income_label')}
@@ -95,10 +96,10 @@ export default function CategoriesScreen() {
               <TouchableOpacity
                 key={category.id}
                 style={[styles.categoryCard, { 
-                  backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                  backgroundColor: theme.card,
                   borderRadius: getRadius(110, 'medium'),
                   borderColor: theme.border,
-                  borderWidth: isDark ? 1 : 0
+                  borderWidth: 1
                 }]}
                 onPress={() => router.push(`/categories/edit?id=${category.id}`)}
               >
@@ -114,8 +115,8 @@ export default function CategoriesScreen() {
 
           {filteredCategories.length === 0 && (
             <View style={styles.emptyState}>
-              <View style={[styles.emptyIconContainer, { backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', borderRadius: getRadius(100, 'medium') }]}>
-                 <Ionicons name="pricetags-outline" size={48} color={isDark ? '#475569' : '#cbd5e1'} />
+              <View style={[styles.emptyIconContainer, { backgroundColor: theme.card, borderRadius: getRadius(100, 'medium') }]}>
+                 <Ionicons name="pricetags-outline" size={48} color={theme.textSecondary} />
               </View>
               <Text style={[styles.emptyText, { color: theme.text }]}>{t('categories.no_categories')}</Text>
               <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>

@@ -571,6 +571,12 @@ export const storage = {
   // Currency
   getCurrency: () => AsyncStorageImpl.getCurrency(),
   setCurrency: (currency: string) => AsyncStorageImpl.setCurrency(currency),
+  getCompactCurrency: () => AsyncStorageImpl.getCompactCurrency(),
+  setCompactCurrency: (enabled: boolean) => AsyncStorageImpl.setCompactCurrency(enabled),
+  getApiKey: () => AsyncStorageImpl.getApiKey(),
+  generateApiKey: () => AsyncStorageImpl.generateApiKey(),
+  getTheme: () => AsyncStorageImpl.getTheme(),
+  setTheme: (theme: 'system' | 'light' | 'dark') => AsyncStorageImpl.setTheme(theme),
 };
 
 // Re-export types

@@ -10,9 +10,9 @@ import {
   TextInput,
   Pressable,
   Platform,
-  RefreshControl,
-  useColorScheme as useNativeColorScheme
+   RefreshControl,
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomAlert } from '@/components/ui/custom-alert';
@@ -29,8 +29,9 @@ import { Colors, getRadius } from '@/constants/theme';
 
 export default function StatsScreen() {
   const insets = useSafeAreaInsets();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [timeRange, setTimeRange] = useState<'WEEKLY' | 'MONTHLY' | 'ANNUALLY' | 'CUSTOM'>('MONTHLY');
@@ -118,29 +119,31 @@ export default function StatsScreen() {
     const handleTransactionEvent = () => loadData();
     eventEmitter.on(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
     eventEmitter.on(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
+    eventEmitter.on(EVENTS.WALLET_UPDATED, handleTransactionEvent);
     return () => {
       eventEmitter.off(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
       eventEmitter.off(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
+      eventEmitter.off(EVENTS.WALLET_UPDATED, handleTransactionEvent);
     };
   }, [loadData]);
 
   const goToPrevious = () => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (timeRange === 'WEEKLY') newDate.setDate(prev.getDate() - 7);
-      else if (timeRange === 'ANNUALLY') newDate.setFullYear(prev.getFullYear() - 1);
-      else newDate.setMonth(prev.getMonth() - 1);
-      return newDate;
+      const d = new Date(prev);
+      if (timeRange === 'WEEKLY') d.setDate(prev.getDate() - 7);
+      else if (timeRange === 'ANNUALLY') d.setFullYear(prev.getFullYear() - 1);
+      else d.setMonth(prev.getMonth() - 1);
+      return d;
     });
   };
 
   const goToNext = () => {
     setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (timeRange === 'WEEKLY') newDate.setDate(prev.getDate() + 7);
-      else if (timeRange === 'ANNUALLY') newDate.setFullYear(prev.getFullYear() + 1);
-      else newDate.setMonth(prev.getMonth() + 1);
-      return newDate;
+      const d = new Date(prev);
+      if (timeRange === 'WEEKLY') d.setDate(prev.getDate() + 7);
+      else if (timeRange === 'ANNUALLY') d.setFullYear(prev.getFullYear() + 1);
+      else d.setMonth(prev.getMonth() + 1);
+      return d;
     });
   };
 
@@ -177,7 +180,7 @@ export default function StatsScreen() {
           styles.monthNav, 
           { 
             backgroundColor: theme.background,
-            borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9'
+            borderBottomColor: theme.border
           }
         ]}>
           <TouchableOpacity onPress={goToPrevious} style={styles.navBtn}>
@@ -206,7 +209,7 @@ export default function StatsScreen() {
                   styles.inlineDropdown, 
                   { 
                     backgroundColor: theme.background,
-                    borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                    borderColor: theme.border,
                     borderRadius: getRadius(170, 'medium') 
                   }
                 ]}>
@@ -220,7 +223,7 @@ export default function StatsScreen() {
                       key={item.id} 
                       style={[
                         styles.inlineMenuItem, 
-                        timeRange === item.id && { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }
+                        timeRange === item.id && { backgroundColor: theme.card }
                       ]} 
                       onPress={() => { 
                         if (item.id === 'CUSTOM') { 
@@ -236,10 +239,11 @@ export default function StatsScreen() {
                         <Ionicons 
                           name={item.icon as any} 
                           size={16} 
-                          color={timeRange === item.id ? theme.tint : '#64748b'} 
+                          color={timeRange === item.id ? theme.tint : theme.textSecondary} 
                         />
                         <Text style={[
                           styles.inlineMenuText, 
+                          { color: theme.textSecondary },
                           timeRange === item.id && { color: theme.tint, fontWeight: '700' }
                         ]}>
                           {item.label}
@@ -257,14 +261,15 @@ export default function StatsScreen() {
           <TouchableOpacity 
             style={[
               styles.tab, 
-              { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc', borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9' },
+              { backgroundColor: theme.card, borderColor: theme.border },
               activeTab === 'EXPENSE' && { backgroundColor: theme.background, borderColor: theme.tint, borderWidth: 1.5 }
             ]} 
             onPress={() => setActiveTab('EXPENSE')}
           >
-            <Ionicons name="arrow-down" size={12} color={activeTab === 'EXPENSE' ? theme.tint : '#94a3b8'} />
+            <Ionicons name="arrow-down" size={12} color={activeTab === 'EXPENSE' ? theme.tint : theme.textSecondary} />
             <Text style={[
               styles.tabText, 
+              { color: theme.textSecondary },
               activeTab === 'EXPENSE' && { color: theme.tint, fontWeight: '700' }
             ]}>
               Pengeluaran
@@ -273,14 +278,15 @@ export default function StatsScreen() {
           <TouchableOpacity 
             style={[
               styles.tab, 
-              { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc', borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9' },
+              { backgroundColor: theme.card, borderColor: theme.border },
               activeTab === 'INCOME' && { backgroundColor: theme.background, borderColor: theme.tint, borderWidth: 1.5 }
             ]} 
             onPress={() => setActiveTab('INCOME')}
           >
-            <Ionicons name="arrow-up" size={12} color={activeTab === 'INCOME' ? theme.tint : '#94a3b8'} />
+            <Ionicons name="arrow-up" size={12} color={activeTab === 'INCOME' ? theme.tint : theme.textSecondary} />
             <Text style={[
               styles.tabText, 
+              { color: theme.textSecondary },
               activeTab === 'INCOME' && { color: theme.tint, fontWeight: '700' }
             ]}>
               Pemasukan
@@ -292,11 +298,11 @@ export default function StatsScreen() {
           styles.totalCard, 
           { 
             backgroundColor: theme.background, 
-            borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+            borderColor: theme.border,
             borderRadius: getRadius(100) 
           }
         ]}>
-          <Text style={styles.totalLabel}>ESTIMASI TOTAL {activeTab === 'EXPENSE' ? 'PENGELUARAN' : 'PEMASUKAN'}</Text>
+          <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>ESTIMASI TOTAL {activeTab === 'EXPENSE' ? 'PENGELUARAN' : 'PEMASUKAN'}</Text>
           <Text style={[styles.totalAmount, { color: theme.text }]}>{formatCurrency(totalAmount)}</Text>
         </View>
 
@@ -305,7 +311,7 @@ export default function StatsScreen() {
             styles.chartCard, 
             { 
               backgroundColor: theme.background,
-              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderColor: theme.border,
               borderRadius: getRadius(220) 
             }
           ]}>
@@ -316,12 +322,12 @@ export default function StatsScreen() {
             styles.emptyCard, 
             { 
               backgroundColor: theme.background,
-              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderColor: theme.border,
               borderRadius: getRadius(150) 
             }
           ]}>
-            <Ionicons name="layers-outline" size={40} color={colorScheme === 'dark' ? '#262626' : '#e2e8f0'} />
-            <Text style={styles.emptyText}>Tidak ada aktivitas finansial</Text>
+            <Ionicons name="layers-outline" size={40} color={isDark ? theme.card : '#e2e8f0'} />
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Tidak ada aktivitas finansial</Text>
           </View>
         )}
 
@@ -330,20 +336,20 @@ export default function StatsScreen() {
             styles.categoryCard, 
             { 
               backgroundColor: theme.background,
-              borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+              borderColor: theme.border,
               borderRadius: getRadius(200) 
             }
           ]}>
-            <View style={[styles.categoryHeader, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' }]}>
-              <Text style={styles.categoryHeaderText}>Analisa Kategori</Text>
+            <View style={[styles.categoryHeader, { backgroundColor: isDark ? theme.card : '#f8fafc' }]}>
+              <Text style={[styles.categoryHeaderText, { color: theme.textSecondary }]}>Analisa Kategori</Text>
             </View>
             {categoryData.map((item) => (
-              <View key={item.categoryId} style={[styles.categoryItem, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+              <View key={item.categoryId} style={[styles.categoryItem, { borderBottomColor: theme.border }]}>
                 <View style={[
                   styles.categoryIcon, 
                   { 
-                    backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
-                    borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
                     borderRadius: getRadius(40) 
                   }
                 ]}>
@@ -352,13 +358,13 @@ export default function StatsScreen() {
                 <View style={styles.categoryContent}>
                   <Text style={[styles.categoryName, { color: theme.text }]}>{item.categoryName}</Text>
                   <View style={styles.progressContainer}>
-                    <View style={[styles.progressBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                    <View style={[styles.progressBar, { backgroundColor: theme.card }]}>
                       <View style={[
                         styles.progressFill, 
-                        { width: `${item.percentage}%`, backgroundColor: colorScheme === 'dark' ? '#3b82f6' : '#475569' }
+                        { width: `${item.percentage}%`, backgroundColor: isDark ? theme.tint : '#475569' }
                       ]} />
                     </View>
-                    <Text style={styles.percentageText}>{item.percentage.toFixed(1)}%</Text>
+                    <Text style={[styles.percentageText, { color: theme.textSecondary }]}>{item.percentage.toFixed(1)}%</Text>
                   </View>
                 </View>
                 <View style={styles.categoryAmount}>
@@ -380,45 +386,45 @@ export default function StatsScreen() {
               borderRadius: getRadius(300, 'large') 
             }
           ]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
               <Text style={[styles.modalTitle, { color: theme.text }]}>Rentang Waktu</Text>
               <TouchableOpacity onPress={() => setShowCustomRangeModal(false)}>
-                <Ionicons name="close" size={24} color="#64748b" />
+                <Ionicons name="close" size={24} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
             <View style={{ padding: 20, gap: 16 }}>
               <View>
-                <Text style={styles.inputLabel}>Mulai (YYYY-MM-DD)</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Mulai (YYYY-MM-DD)</Text>
                 <TextInput 
                   style={[
                     styles.input, 
                     { 
-                      backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
-                      borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
                       color: theme.text,
                       borderRadius: getRadius(50) 
                     }
                   ]} 
                   placeholder="2024-01-01" 
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={theme.textSecondary}
                   value={tempRange.start} 
                   onChangeText={(val) => setTempRange(prev => ({ ...prev, start: val }))} 
                 />
               </View>
               <View>
-                <Text style={styles.inputLabel}>Selesai (YYYY-MM-DD)</Text>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>Selesai (YYYY-MM-DD)</Text>
                 <TextInput 
                   style={[
                     styles.input, 
                     { 
-                      backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc',
-                      borderColor: colorScheme === 'dark' ? '#404040' : '#f1f5f9',
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
                       color: theme.text,
                       borderRadius: getRadius(50) 
                     }
                   ]} 
                   placeholder="2024-01-31" 
-                  placeholderTextColor="#64748b"
+                  placeholderTextColor={theme.textSecondary}
                   value={tempRange.end} 
                   onChangeText={(val) => setTempRange(prev => ({ ...prev, end: val }))} 
                 />
@@ -466,16 +472,16 @@ const styles = StyleSheet.create({
   filterBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent', width: 40, height: 40 },
   tabContainer: { flexDirection: 'row', padding: 16, gap: 12 },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 12, gap: 6, borderWidth: 1 },
-  tabText: { fontSize: 12, fontWeight: '500', color: '#64748b' },
+  tabText: { fontSize: 12, fontWeight: '500' },
   totalCard: { margin: 16, marginBottom: 12, padding: 20, alignItems: 'center', borderWidth: 1 },
-  totalLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', marginBottom: 6, letterSpacing: 0.5 },
+  totalLabel: { fontSize: 11, fontWeight: '700', marginBottom: 6, letterSpacing: 0.5 },
   totalAmount: { fontSize: 24, fontWeight: '900', letterSpacing: -1 },
   chartCard: { marginHorizontal: 16, marginBottom: 12, padding: 24, alignItems: 'center', borderWidth: 1 },
   emptyCard: { marginHorizontal: 16, padding: 40, alignItems: 'center', borderWidth: 1 },
-  emptyText: { fontSize: 13, color: '#94a3b8', marginTop: 12 },
+  emptyText: { fontSize: 13, marginTop: 12 },
   categoryCard: { marginHorizontal: 16, marginBottom: 24, borderWidth: 1, overflow: 'hidden' },
   categoryHeader: { paddingHorizontal: 16, paddingVertical: 12 },
-  categoryHeaderText: { fontSize: 12, fontWeight: '700', color: '#64748b', letterSpacing: 0.5 },
+  categoryHeaderText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
   categoryItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, gap: 12 },
   categoryIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   categoryEmoji: { fontSize: 20 },
@@ -484,18 +490,18 @@ const styles = StyleSheet.create({
   progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   progressBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 3 },
-  percentageText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
+  percentageText: { fontSize: 11, fontWeight: '700' },
   categoryAmount: { alignItems: 'flex-end', justifyContent: 'center' },
   amountText: { fontSize: 15, fontWeight: '900' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', padding: 24 },
   modalContent: { width: '100%', overflow: 'hidden' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, alignItems: 'center' },
   modalTitle: { fontSize: 16, fontWeight: '800' },
-  inputLabel: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 8 },
+  inputLabel: { fontSize: 12, fontWeight: '700', marginBottom: 8 },
   input: { padding: 14, borderWidth: 1, fontSize: 14 },
   saveBtn: { padding: 16, alignItems: 'center', marginTop: 10 },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
   inlineDropdown: { position: 'absolute', top: 50, right: 0, width: 170, padding: 6, borderWidth: 1, zIndex: 1100, elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
   inlineMenuItem: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10 },
-  inlineMenuText: { fontSize: 13, color: '#64748b', fontWeight: '500' },
+  inlineMenuText: { fontSize: 13, fontWeight: '500' },
 });

@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   ScrollView, 
   Switch, 
-  useColorScheme as useNativeColorScheme 
 } from 'react-native';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
@@ -13,9 +12,10 @@ import { getAIConsent, saveAIConsent } from '@/lib/ai/ai-consent';
 import { CustomAlert } from '@/components/ui/custom-alert';
 import { useFocusEffect } from 'expo-router';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function PrivacySecurityScreen() {
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -80,22 +80,22 @@ export default function PrivacySecurityScreen() {
           <View style={[
             styles.card, 
             { 
-              backgroundColor: isDark ? '#171717' : '#fff',
-              borderColor: isDark ? '#262626' : '#f3f4f6',
-              borderWidth: isDark ? 1 : 0,
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              borderWidth: 1,
               borderRadius: getRadius(160) 
             }
           ]}>
             <View style={styles.infoItem}>
               <Text style={[styles.infoTitle, { color: theme.text }]}>Data Lokal</Text>
-              <Text style={[styles.infoDescription, { color: isDark ? '#94a3b8' : '#6b7280' }]}>
+              <Text style={[styles.infoDescription, { color: theme.textSecondary }]}>
                 Semua data transaksi Anda disimpan secara lokal di perangkat Anda.
               </Text>
             </View>
-            <View style={[styles.divider, { backgroundColor: isDark ? '#262626' : '#f3f4f6' }]} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.infoItem}>
               <Text style={[styles.infoTitle, { color: theme.text }]}>Tidak Ada Cloud</Text>
-              <Text style={[styles.infoDescription, { color: isDark ? '#94a3b8' : '#6b7280' }]}>
+              <Text style={[styles.infoDescription, { color: theme.textSecondary }]}>
                 Data Anda tidak dikirim ke server atau cloud manapun.
               </Text>
             </View>
@@ -108,28 +108,28 @@ export default function PrivacySecurityScreen() {
           <View style={[
             styles.card, 
             { 
-              backgroundColor: isDark ? '#171717' : '#fff',
-              borderColor: isDark ? '#262626' : '#f3f4f6',
-              borderWidth: isDark ? 1 : 0,
+              backgroundColor: theme.card,
+              borderColor: theme.border,
+              borderWidth: 1,
               borderRadius: getRadius(160) 
             }
           ]}>
             <View style={styles.settingItem}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.infoTitle, { color: theme.text }]}>AI Training Data</Text>
-                <Text style={[styles.infoDescription, { color: isDark ? '#94a3b8' : '#6b7280' }]}>
+                <Text style={[styles.infoDescription, { color: theme.textSecondary }]}>
                   Izinkan penggunaan data anonim untuk meningkatkan akurasi AI.
                 </Text>
               </View>
               <Switch
                 value={aiConsentEnabled}
                 onValueChange={handleToggleAIConsent}
-                trackColor={{ false: isDark ? '#262626' : '#d1d5db', true: theme.tint + '80' }}
+                trackColor={{ false: theme.border, true: theme.tint + '80' }}
                 thumbColor={aiConsentEnabled ? theme.tint : (isDark ? '#404040' : '#f3f4f6')}
               />
             </View>
-            <View style={[styles.infoBox, { backgroundColor: isDark ? '#1a1a1a' : '#f9fafb' }]}>
-              <Text style={[styles.infoBoxText, { color: isDark ? '#71717a' : '#6b7280' }]}>
+            <View style={[styles.infoBox, { backgroundColor: isDark ? theme.background : '#f9fafb' }]}>
+              <Text style={[styles.infoBoxText, { color: theme.textSecondary }]}>
                 Data yang digunakan untuk training AI akan dianonimkan dan tidak mengandung informasi pribadi Anda.
               </Text>
             </View>
@@ -137,7 +137,7 @@ export default function PrivacySecurityScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: isDark ? '#525252' : '#6b7280' }]}>
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
             Kami berkomitmen untuk melindungi privasi dan keamanan data Anda.
           </Text>
         </View>

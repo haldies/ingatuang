@@ -10,11 +10,11 @@ import {
   Pressable,
   KeyboardAvoidingView,
   Platform,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Wallet, storage } from '@/lib/storage/storage-adapter';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface AddWalletModalProps {
   visible: boolean;
@@ -27,7 +27,7 @@ const WALLET_ICONS = ['wallet', 'card', 'cash', 'business', 'home', 'car', 'gift
 const WALLET_COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#6366f1', '#4b5563'];
 
 export function AddWalletModal({ visible, onClose, wallet, onSuccess }: AddWalletModalProps) {
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -43,9 +43,9 @@ export function AddWalletModal({ visible, onClose, wallet, onSuccess }: AddWalle
     } else {
       setName('');
       setIcon('wallet');
-      setColor(isDark ? '#3b82f6' : theme.tint);
+      setColor(theme.tint);
     }
-  }, [wallet, visible, isDark, theme.tint]);
+  }, [wallet, visible, theme.tint]);
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -67,14 +67,14 @@ export function AddWalletModal({ visible, onClose, wallet, onSuccess }: AddWalle
           <View style={[
             styles.sheet, 
             { 
-              backgroundColor: isDark ? '#171717' : '#fff',
+              backgroundColor: theme.background,
               borderTopLeftRadius: getRadius(400, 'large'), 
               borderTopRightRadius: getRadius(400, 'large') 
             }
           ]}>
-            <View style={[styles.header, { borderBottomColor: isDark ? '#262626' : '#f1f5f9' }]}>
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
               <Text style={[styles.title, { color: theme.text }]}>{wallet ? 'Ubah Dompet' : 'Tambah Dompet'}</Text>
-              <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={isDark ? '#4b5563' : '#0f172a'} /></TouchableOpacity>
+              <TouchableOpacity onPress={onClose}><Ionicons name="close" size={24} color={theme.textSecondary} /></TouchableOpacity>
             </View>
             <View style={styles.body}>
               <Text style={styles.label}>NAMA DOMPET</Text>
@@ -82,14 +82,14 @@ export function AddWalletModal({ visible, onClose, wallet, onSuccess }: AddWalle
                 style={[
                   styles.input, 
                   { 
-                    backgroundColor: isDark ? '#1a1a1a' : '#f8fafc',
+                    backgroundColor: theme.card,
                     color: theme.text,
-                    borderColor: isDark ? '#262626' : '#f1f5f9',
+                    borderColor: theme.border,
                     borderRadius: getRadius(56) 
                   }
                 ]} 
                 placeholder="Masukkan nama dompet..." 
-                placeholderTextColor={isDark ? '#404040' : '#94a3b8'}
+                placeholderTextColor={theme.textSecondary}
                 value={name} 
                 onChangeText={setName} 
               />
@@ -101,13 +101,13 @@ export function AddWalletModal({ visible, onClose, wallet, onSuccess }: AddWalle
                     key={i} 
                     style={[
                       styles.iconItem, 
-                      { backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', borderColor: isDark ? '#262626' : '#f1f5f9' },
+                      { backgroundColor: theme.card, borderColor: theme.border },
                       icon === i && { borderColor: color, backgroundColor: color + '15' }, 
                       { borderRadius: getRadius(100) }
                     ]} 
                     onPress={() => setIcon(i)}
                   >
-                    <Ionicons name={i as any} size={24} color={icon === i ? color : (isDark ? '#4b5563' : '#64748b')} />
+                    <Ionicons name={i as any} size={24} color={icon === i ? color : theme.icon} />
                   </TouchableOpacity>
                 ))}
               </ScrollView>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator, useColorScheme as useNativeColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { storage, Category } from '@/lib/storage/storage-adapter';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const EMOJI_OPTIONS = [
   '💰', '💵', '💴', '💶', '💷', '💸', '💳', '🏦',
@@ -33,7 +34,7 @@ export default function EditCategoryScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const categoryId = params.id as string;
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -193,7 +194,7 @@ export default function EditCategoryScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Preview */}
-        <View style={[styles.previewSection, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+        <View style={[styles.previewSection, { backgroundColor: theme.card }]}>
           <View style={[styles.previewIcon, { backgroundColor: selectedColor + '20', borderRadius: getRadius(100, 'medium') }]}>
             <Text style={styles.previewEmoji}>{selectedIcon}</Text>
           </View>
@@ -201,13 +202,13 @@ export default function EditCategoryScreen() {
         </View>
 
         {/* Type Selection */}
-        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff', borderTopColor: theme.border, borderTopWidth: 1 }]}>
+        <View style={[styles.section, { backgroundColor: theme.card, borderTopColor: theme.border, borderTopWidth: 1 }]}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.type_label')}</Text>
-          <div className="typeContainer" style={styles.typeContainer}>
+          <View style={styles.typeContainer}>
             <TouchableOpacity
               style={[
                 styles.typeButton, 
-                { backgroundColor: isDark ? '#0a0a0a' : '#f8fafc', borderRadius: getRadius(56, 'small') },
+                { backgroundColor: theme.background, borderRadius: getRadius(56, 'small') },
                 selectedType === 'EXPENSE' && { backgroundColor: theme.tint }
               ]}
               onPress={() => setSelectedType('EXPENSE')}
@@ -215,11 +216,11 @@ export default function EditCategoryScreen() {
               <Ionicons 
                 name="arrow-down-circle" 
                 size={20} 
-                color={selectedType === 'EXPENSE' ? '#fff' : (isDark ? '#475569' : '#6b7280')} 
+                color={selectedType === 'EXPENSE' ? '#fff' : theme.textSecondary} 
               />
               <Text style={[
                 styles.typeText, 
-                { color: isDark ? '#94a3b8' : '#64748b' },
+                { color: theme.textSecondary },
                 selectedType === 'EXPENSE' && { color: '#fff' }
               ]}>
                 {t('dashboard.expense_label')}
@@ -228,7 +229,7 @@ export default function EditCategoryScreen() {
             <TouchableOpacity
               style={[
                 styles.typeButton, 
-                { backgroundColor: isDark ? '#0a0a0a' : '#f8fafc', borderRadius: getRadius(56, 'small') },
+                { backgroundColor: theme.background, borderRadius: getRadius(56, 'small') },
                 selectedType === 'INCOME' && { backgroundColor: theme.tint }
               ]}
               onPress={() => setSelectedType('INCOME')}
@@ -236,25 +237,25 @@ export default function EditCategoryScreen() {
               <Ionicons 
                 name="arrow-up-circle" 
                 size={20} 
-                color={selectedType === 'INCOME' ? '#fff' : (isDark ? '#475569' : '#6b7280')} 
+                color={selectedType === 'INCOME' ? '#fff' : theme.textSecondary} 
               />
               <Text style={[
                 styles.typeText, 
-                { color: isDark ? '#94a3b8' : '#64748b' },
+                { color: theme.textSecondary },
                 selectedType === 'INCOME' && { color: '#fff' }
               ]}>
                 {t('dashboard.income_label')}
               </Text>
             </TouchableOpacity>
-          </div>
+          </View>
         </View>
 
         {/* Name Input */}
-        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.name_label')}</Text>
           <TextInput
             style={[styles.input, { 
-              backgroundColor: isDark ? '#0a0a0a' : '#f8fafc',
+              backgroundColor: theme.background,
               borderColor: theme.border,
               color: theme.text,
               borderRadius: getRadius(56, 'small')
@@ -262,13 +263,13 @@ export default function EditCategoryScreen() {
             value={name}
             onChangeText={setName}
             placeholder={t('categories.name_placeholder')}
-            placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+            placeholderTextColor={theme.textSecondary}
             maxLength={20}
           />
         </View>
 
         {/* Icon Selection */}
-        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.icon_label')}</Text>
           <View style={styles.emojiGrid}>
             {EMOJI_OPTIONS.map((emoji) => (
@@ -277,7 +278,7 @@ export default function EditCategoryScreen() {
                 style={[
                   styles.emojiButton,
                   { 
-                    backgroundColor: isDark ? '#0a0a0a' : '#f8fafc',
+                    backgroundColor: theme.background,
                     borderRadius: getRadius(48, 'small') 
                   },
                   selectedIcon === emoji && { backgroundColor: theme.tint + '20', borderColor: theme.tint, borderWidth: 2 },
@@ -291,7 +292,7 @@ export default function EditCategoryScreen() {
         </View>
 
         {/* Color Selection */}
-        <View style={[styles.section, { backgroundColor: isDark ? '#1a1a1a' : '#fff' }]}>
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('categories.color_label')}</Text>
           <View style={styles.colorGrid}>
             {COLOR_OPTIONS.map((color) => (
@@ -312,7 +313,7 @@ export default function EditCategoryScreen() {
           </View>
         </View>
 
-        {/* Save Button */}
+        {/* Update Button */}
         <TouchableOpacity 
           style={[styles.saveButton, { backgroundColor: theme.tint, borderRadius: getRadius(56, 'small'), shadowColor: theme.tint }]} 
           onPress={handleSave}

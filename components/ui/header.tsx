@@ -4,11 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface HeaderProps {
   title: string;
@@ -32,8 +32,9 @@ export const Header = ({
   tintColor
 }: HeaderProps) => {
   const router = useRouter();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   const handleBack = () => {
     if (onBack) {
@@ -50,7 +51,7 @@ export const Header = ({
       styles.container, 
       { 
         backgroundColor: transparent ? 'transparent' : theme.background,
-        borderBottomColor: isDark ? '#262626' : '#f1f5f9',
+        borderBottomColor: theme.border,
         borderBottomWidth: transparent ? 0 : 1
       }
     ]}>
@@ -97,8 +98,6 @@ export const Header = ({
     </View>
   );
 };
-
-const isDark = (useNativeColorScheme() ?? 'light') === 'dark';
 
 const styles = StyleSheet.create({
   container: {

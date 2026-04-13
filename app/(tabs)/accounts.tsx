@@ -15,8 +15,8 @@ import {
   Dimensions,
   LayoutAnimation,
   UIManager,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { CustomAlert } from '@/components/ui/custom-alert';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
@@ -40,8 +40,9 @@ const CARD_WIDTH = (width - 44) / 2;
 
 export default function AccountsScreen() {
   const { t } = useTranslation();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   const [activeTab, setActiveTab] = useState<'BUDGET' | 'WALLET'>('BUDGET');
   const [loading, setLoading] = useState(true);
@@ -133,8 +134,8 @@ export default function AccountsScreen() {
 
   return (
     <ScreenWrapper backgroundColor={theme.background}>
-      <View style={[styles.header, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
-        <View style={[styles.tabSwitcher, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9', borderRadius: getRadius(100, 'small') }]}>
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <View style={[styles.tabSwitcher, { backgroundColor: theme.card, borderRadius: getRadius(100, 'small') }]}>
             <TouchableOpacity 
               style={[
                 styles.tabBtn, 
@@ -171,31 +172,31 @@ export default function AccountsScreen() {
             <View style={[
               styles.summaryCard, 
               { 
-                backgroundColor: colorScheme === 'dark' ? '#171717' : '#f8fafc',
-                borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                backgroundColor: theme.card,
+                borderColor: theme.border,
                 borderRadius: getRadius(100) 
               }
             ]}>
               <View style={styles.summaryInfo}>
                 <View>
-                  <Text style={styles.summaryLabel}>SISA ANGGARAN</Text>
+                  <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>SISA ANGGARAN</Text>
                   <Text style={[styles.summaryAmount, { color: (budgetSummary?.remaining || 0) < 0 ? '#ef4444' : theme.tint }]}>
                     {formatCurrency(budgetSummary?.remaining || 0)}
                   </Text>
                 </View>
-                <View style={[styles.summaryBadge, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0' }]}>
+                <View style={[styles.summaryBadge, { backgroundColor: isDark ? theme.background : '#e2e8f0' }]}>
                   <Text style={[styles.badgeText, { color: theme.text }]}>{budgetSummary?.percentage.toFixed(0)}%</Text>
                 </View>
               </View>
-              <View style={[styles.progBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#e2e8f0', borderRadius: 4 }]}>
+              <View style={[styles.progBar, { backgroundColor: isDark ? theme.background : '#e2e8f0', borderRadius: 4 }]}>
                 <View style={[styles.progFill, { backgroundColor: theme.tint, width: `${Math.min(budgetSummary?.percentage || 0, 100)}%` }]} />
               </View>
             </View>
             
-            <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>POST PENGELUARAN</Text></View>
+            <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>POST PENGELUARAN</Text></View>
             
             {budgetSummary && budgetSummary.categories.length > 0 ? budgetSummary.categories.map((cat) => (
-              <View key={cat.categoryId} style={[styles.budgetItem, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+              <View key={cat.categoryId} style={[styles.budgetItem, { borderBottomColor: theme.border }]}>
                 <View style={[
                   styles.catIconBox, 
                   { 
@@ -208,9 +209,9 @@ export default function AccountsScreen() {
                 <View style={{ flex: 1, marginLeft: 16 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
                     <Text style={[styles.itemName, { color: theme.text }]}>{cat.categoryName}</Text>
-                    <Text style={[styles.itemRefText, { color: cat.percentage > 90 ? '#ef4444' : '#94a3b8' }]}>{cat.percentage.toFixed(0)}%</Text>
+                    <Text style={[styles.itemRefText, { color: cat.percentage > 90 ? '#ef4444' : theme.textSecondary }]}>{cat.percentage.toFixed(0)}%</Text>
                   </View>
-                  <View style={[styles.itemProgBar, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                  <View style={[styles.itemProgBar, { backgroundColor: theme.card }]}>
                     <View style={[
                       styles.itemProgFill, 
                       { 
@@ -223,8 +224,8 @@ export default function AccountsScreen() {
               </View>
             )) : (
               <View style={styles.emptyContainer}>
-                <Ionicons name="pie-chart-outline" size={48} color={colorScheme === 'dark' ? '#262626' : '#f1f5f9'} />
-                <Text style={styles.emptyText}>Belum ada anggaran</Text>
+                <Ionicons name="pie-chart-outline" size={48} color={theme.card} />
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Belum ada anggaran</Text>
               </View>
             )}
           </>
@@ -243,7 +244,7 @@ export default function AccountsScreen() {
                   styles.walletCard, 
                   { 
                     backgroundColor: theme.background,
-                    borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                    borderColor: theme.border,
                     borderRadius: getRadius(130) 
                   }, 
                   selectedWalletId === wallet.id && { backgroundColor: wallet.color, borderColor: wallet.color }
@@ -269,7 +270,7 @@ export default function AccountsScreen() {
                       <Text style={[styles.activeText, { color: wallet.color }]}>AKTIF</Text>
                     </View>
                   ) : (
-                    <Ionicons name="ellipsis-horizontal" size={20} color="#cbd5e1" />
+                    <Ionicons name="ellipsis-horizontal" size={20} color={theme.textSecondary} />
                   )}
                 </View>
                 <Text style={[styles.walletName, { color: theme.text }, selectedWalletId === wallet.id && { color: '#fff' }]}>{wallet.name}</Text>
@@ -293,7 +294,7 @@ export default function AccountsScreen() {
                 borderTopRightRadius: getRadius(400, 'large') 
               }
             ]}>
-              <View style={[styles.modalHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
                 <Text style={[styles.modalTitle, { color: theme.text }]}>Atur Anggaran</Text>
                 <TouchableOpacity onPress={() => setShowBudgetModal(false)}>
                   <Ionicons name="close" size={24} color={theme.text} />
@@ -307,14 +308,14 @@ export default function AccountsScreen() {
                       style={[
                         styles.catChip, 
                         { 
-                          backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                          backgroundColor: theme.card,
                           borderRadius: getRadius(44) 
                         }, 
                         selectedCategory === cat.id && { backgroundColor: theme.tint }
                       ]} 
                       onPress={() => setSelectedCategory(cat.id)}
                     >
-                      <Text style={[styles.catLabel, selectedCategory === cat.id && { color: '#fff' }]}>{cat.icon} {cat.name}</Text>
+                      <Text style={[styles.catLabel, { color: theme.textSecondary }, selectedCategory === cat.id && { color: '#fff' }]}>{cat.icon} {cat.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -322,14 +323,14 @@ export default function AccountsScreen() {
                   style={[
                     styles.input, 
                     { 
-                      backgroundColor: colorScheme === 'dark' ? '#171717' : '#f8fafc',
-                      borderColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9',
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
                       color: theme.text,
                       borderRadius: getRadius(56) 
                     }
                   ]} 
                   placeholder="Jumlah Anggaran" 
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={theme.textSecondary}
                   keyboardType="numeric" 
                   value={budgetAmount} 
                   onChangeText={setBudgetAmount} 
@@ -382,23 +383,19 @@ const styles = StyleSheet.create({
   scrollContent: { paddingVertical: 16, paddingBottom: 100 },
   summaryCard: { marginHorizontal: 20, padding: 16, borderWidth: 1, marginBottom: 16 },
   summaryInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  summaryLabel: { fontSize: 9, fontWeight: '800', color: '#94a3b8', letterSpacing: 0.5 },
+  summaryLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
   summaryAmount: { fontSize: 22, fontWeight: '900' },
   summaryBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   badgeText: { fontSize: 11, fontWeight: '800' },
   progBar: { height: 6, overflow: 'hidden' },
   progFill: { height: '100%' },
-  summaryFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  subLabel: { fontSize: 9, fontWeight: '700', color: '#94a3b8' },
-  subAmount: { fontSize: 13, fontWeight: '800' },
   sectionHeader: { paddingHorizontal: 24, marginBottom: 12 },
-  sectionTitle: { fontSize: 10, fontWeight: '900', color: '#94a3b8', letterSpacing: 1 },
+  sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   budgetItem: { marginHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1 },
   catIconBox: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
   catEmoji: { fontSize: 20 },
   itemName: { fontSize: 14, fontWeight: '700' },
   itemRefText: { fontSize: 11, fontWeight: '800' },
-  itemLimit: { fontSize: 12, color: '#64748b', fontWeight: '500', marginBottom: 8 },
   itemProgBar: { height: 4, borderRadius: 2, overflow: 'hidden' },
   itemProgFill: { height: '100%', borderRadius: 2 },
   walletGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 18, justifyContent: 'space-between' },
@@ -410,7 +407,7 @@ const styles = StyleSheet.create({
   walletName: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
   balAmount: { fontSize: 18, fontWeight: '900' },
   emptyContainer: { padding: 60, alignItems: 'center' },
-  emptyText: { fontSize: 13, color: '#94a3b8', marginTop: 12 },
+  emptyText: { fontSize: 13, marginTop: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalWrap: { width: '100%' },
   modalSheet: { paddingBottom: 40 },
@@ -419,7 +416,7 @@ const styles = StyleSheet.create({
   modalBody: { padding: 24 },
   input: { padding: 16, fontSize: 16, borderWidth: 1, marginBottom: 20 },
   catChip: { paddingHorizontal: 16, paddingVertical: 10, marginRight: 8 },
-  catLabel: { fontSize: 14, fontWeight: '700', color: '#64748b' },
+  catLabel: { fontSize: 14, fontWeight: '700' },
   saveBtn: { paddingVertical: 16, alignItems: 'center' },
   saveBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
 });

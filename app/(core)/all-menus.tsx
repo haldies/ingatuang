@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -15,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { Header } from '@/components/ui/header';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - 64) / 4; 
@@ -59,7 +59,7 @@ const MENU_GROUPS: MenuGroup[] = [
 export default function AllMenusScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
   
@@ -91,7 +91,7 @@ export default function AllMenusScreen() {
       <View style={[
         styles.iconContainer, 
         { 
-          backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
+          backgroundColor: theme.card, 
           borderRadius: getRadius(56, 'small'),
           borderColor: theme.border,
         }

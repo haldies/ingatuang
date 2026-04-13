@@ -39,4 +39,5 @@ export const EVENTS = {
   SUBSCRIPTION_UPDATED: 'subscription_updated',
   WALLET_UPDATED: 'wallet_updated',
   APP_RESUMED: 'app_resumed',
+  THEME_CHANGED: 'theme_changed',
 } as const;

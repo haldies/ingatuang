@@ -12,6 +12,7 @@ import { AIConsentDialog } from '@/components/transactions/ai-consent-dialog';
 import { hasShownAIConsent, saveAIConsent } from '@/lib/ai/ai-consent';
 import { parseTransactionText } from '@/lib/ai/ai-parser';
 import { storage } from '@/lib/storage/storage-adapter';
+import { Colors } from '@/constants/theme';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -31,11 +32,13 @@ export default function RootLayout() {
       try {
         const { initI18n } = require('@/lib/utils/i18n');
         const { storage } = require('@/lib/storage/storage-adapter');
-        const { updateGlobalCurrency } = require('@/lib/utils/format');
+        const { updateGlobalCurrency, updateGlobalCompact } = require('@/lib/utils/format');
         
         await initI18n();
         const currency = await storage.getCurrency();
+        const compact = await storage.getCompactCurrency();
         updateGlobalCurrency(currency);
+        updateGlobalCompact(compact);
 
         const apiUrl = process.env.EXPO_PUBLIC_API_URL || '';
         const apiKey = process.env.EXPO_PUBLIC_API_KEY || '';
@@ -79,6 +82,8 @@ export default function RootLayout() {
     return null;
   }
 
+  const theme = Colors[colorScheme ?? 'light'];
+
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -87,12 +92,12 @@ export default function RootLayout() {
             headerShown: false,
             animation: 'slide_from_right',
             gestureEnabled: true,
-            contentStyle: { backgroundColor: '#ffffff' },
+            contentStyle: { backgroundColor: theme.background },
           }}
         >
           <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         </Stack>
-        <StatusBar style="dark" backgroundColor="#ffffff" translucent={false} />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} backgroundColor={theme.background} translucent={false} />
         {showConsent && (
           <AIConsentDialog
             visible={showConsent}

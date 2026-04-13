@@ -1,7 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { View, TouchableOpacity, Animated, Platform } from 'react-native';
+import { View, TouchableOpacity, Animated, Platform, AppState } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -13,12 +13,16 @@ import { AddTransactionModal } from '@/components/transactions/add-transaction-m
 import { AddSubscriptionModal } from '@/components/subscriptions/add-subscription-modal';
 import { QuickAddModal } from '@/components/transactions/quick-add-modal';
 import { Colors } from '@/constants/theme';
-import { AppState } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
@@ -77,15 +81,15 @@ export default function TabLayout() {
     <>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors.light.tint,
-          tabBarInactiveTintColor: '#64748b',
+          tabBarActiveTintColor: theme.tint,
+          tabBarInactiveTintColor: theme.tabIconDefault,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarShowLabel: true,
           tabBarStyle: {
-            backgroundColor: '#ffffff',
+            backgroundColor: theme.background,
             borderTopWidth: 1,
-            borderTopColor: '#f1f5f9',
+            borderTopColor: theme.border,
             paddingTop: 10,
             paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15,
             height: (insets.bottom > 0 ? 70 + insets.bottom : 70),
@@ -111,13 +115,13 @@ export default function TabLayout() {
                     width: 60,
                     height: 60,
                     borderRadius: 30,
-                    backgroundColor: Colors.light.tint,
+                    backgroundColor: theme.tint,
                     borderWidth: 4,
-                    borderColor: '#fff',
+                    borderColor: theme.background,
                     justifyContent: 'center',
                     alignItems: 'center',
                     elevation: 10,
-                    shadowColor: Colors.light.tint,
+                    shadowColor: theme.tint,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.3,
                     shadowRadius: 8,

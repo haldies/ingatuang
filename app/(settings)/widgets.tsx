@@ -1,27 +1,34 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, useColorScheme } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { Colors, getRadius } from '@/constants/theme';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function WidgetsScreen() {
-  const colorScheme = useColorScheme() ?? 'light';
+  const { t } = useTranslation();
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
   const widgetItems = [
     {
       id: 'ai',
-      title: 'Voice Add (AI)',
-      command: 'Katakan: "Ok Google, catat..."',
+      title: t('settings.widgets.voice_add'),
+      command: t('settings.widgets.voice_desc'),
       icon: 'mic',
       color: '#3b82f6',
     },
     {
       id: 'manual',
-      title: 'Manual Widget',
-      command: 'Input form cepat dari Home Screen',
+      title: t('settings.widgets.manual_widget'),
+      command: t('settings.widgets.manual_desc'),
       icon: 'layout',
       color: '#10b981',
     },
@@ -29,7 +36,7 @@ export default function WidgetsScreen() {
 
   return (
     <ScreenWrapper backgroundColor={theme.background}>
-      <Header title="Widgets" />
+      <Header title={t('settings.widgets.title')} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         <View style={styles.list}>
@@ -39,8 +46,8 @@ export default function WidgetsScreen() {
               style={[
                 styles.card, 
                 { 
-                  backgroundColor: isDark ? '#1a1a1a' : '#f8fafc',
-                  borderColor: isDark ? '#262626' : '#f1f5f9',
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
                   borderRadius: getRadius(100, 'medium') 
                 }
               ]}
@@ -50,15 +57,15 @@ export default function WidgetsScreen() {
               </View>
               <View style={styles.textDetails}>
                 <Text style={[styles.title, { color: theme.text }]}>{item.title}</Text>
-                <Text style={[styles.commandText, { color: isDark ? '#94a3b8' : '#64748b' }]}>{item.command}</Text>
+                <Text style={[styles.commandText, { color: theme.textSecondary }]}>{item.command}</Text>
               </View>
             </View>
           ))}
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: isDark ? '#404040' : '#94a3b8' }]}>
-            Fitur ini memanfaatkan asisten suara dan widget untuk mempercepat pencatatan.
+          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+            {t('settings.local_data_notice')}
           </Text>
         </View>
       </ScrollView>
@@ -67,7 +74,7 @@ export default function WidgetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { padding: 20 },
+  scrollContent: { padding: 20, paddingBottom: 60 },
   list: { gap: 16 },
   card: {
     flexDirection: 'row',

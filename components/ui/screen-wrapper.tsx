@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ViewProps,
   Platform,
-  useColorScheme,
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { SafeAreaView, Edge } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/theme';
 
@@ -28,7 +28,7 @@ export const ScreenWrapper = ({
   style,
   ...props 
 }: ScreenWrapperProps) => {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   
   const finalBackgroundColor = backgroundColor || theme.background;

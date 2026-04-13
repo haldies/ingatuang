@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
+import { Colors } from '@/constants/theme';
 
 type TransactionWithCategory = {
   id: string;
@@ -23,9 +24,12 @@ type Props = {
 
 // Memoized component untuk performa lebih baik
 export const TransactionItemMemo = memo<Props>(({ transaction, onPress }) => {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background, borderBottomColor: theme.border }]}
       onPress={() => onPress(transaction)}
       activeOpacity={0.7}
     >
@@ -33,13 +37,13 @@ export const TransactionItemMemo = memo<Props>(({ transaction, onPress }) => {
         <Text style={styles.icon}>{transaction.category.icon}</Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.categoryName}>{transaction.category.name}</Text>
+        <Text style={[styles.categoryName, { color: theme.text }]}>{transaction.category.name}</Text>
         {transaction.notes && (
-          <Text style={styles.notes} numberOfLines={1}>
+          <Text style={[styles.notes, { color: theme.textSecondary }]} numberOfLines={1}>
             {transaction.notes}
           </Text>
         )}
-        <Text style={styles.date}>{formatDate(transaction.date)}</Text>
+        <Text style={[styles.date, { color: theme.tabIconDefault }]}>{formatDate(transaction.date)}</Text>
       </View>
       <Text
         style={[
@@ -68,9 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
   },
   iconContainer: {
     width: 40,
@@ -89,17 +91,14 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#111827',
     marginBottom: 2,
   },
   notes: {
     fontSize: 12,
-    color: '#6b7280',
     marginBottom: 2,
   },
   date: {
     fontSize: 11,
-    color: '#9ca3af',
   },
   amount: {
     fontSize: 14,

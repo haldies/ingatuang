@@ -1,9 +1,14 @@
 // Utility functions for formatting
 
 let currentCurrency = 'IDR';
+let isCompact = false;
 
 export function updateGlobalCurrency(currency: string) {
   currentCurrency = currency;
+}
+
+export function updateGlobalCompact(compact: boolean) {
+  isCompact = compact;
 }
 
 export function formatCurrency(amount: number): string {
@@ -35,8 +40,9 @@ export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: (currency === 'IDR' || currency === 'JPY' || currency === 'KRW' || currency === 'VND') ? 0 : 2,
-    maximumFractionDigits: (currency === 'IDR' || currency === 'JPY' || currency === 'KRW' || currency === 'VND') ? 0 : 2,
+    notation: isCompact ? 'compact' : 'standard',
+    minimumFractionDigits: isCompact ? 0 : (currency === 'IDR' || currency === 'JPY' || currency === 'KRW' || currency === 'VND') ? 0 : 2,
+    maximumFractionDigits: isCompact ? 1 : (currency === 'IDR' || currency === 'JPY' || currency === 'KRW' || currency === 'VND') ? 0 : 2,
   }).format(amount);
 }
 

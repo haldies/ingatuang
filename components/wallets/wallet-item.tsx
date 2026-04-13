@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { type Wallet } from '@/lib/storage/storage-adapter';
 import { Colors, getRadius } from '@/constants/theme';
-import { formatCurrency } from '@/lib/utils/format';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface WalletItemProps {
   wallet: Wallet;
@@ -12,7 +12,7 @@ interface WalletItemProps {
 }
 
 export function WalletItem({ wallet, onEdit, onDelete }: WalletItemProps) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -20,8 +20,8 @@ export function WalletItem({ wallet, onEdit, onDelete }: WalletItemProps) {
     <View style={[
       styles.card, 
       { 
-        backgroundColor: isDark ? '#171717' : '#fff',
-        borderColor: isDark ? '#262626' : '#f1f5f9',
+        backgroundColor: theme.card,
+        borderColor: theme.border,
         borderRadius: getRadius(100) 
       }
     ]}>
@@ -39,16 +39,16 @@ export function WalletItem({ wallet, onEdit, onDelete }: WalletItemProps) {
           onPress={onEdit} 
           style={[
             styles.actionBtn, 
-            { backgroundColor: isDark ? '#1a1a1a' : '#f8fafc' }
+            { backgroundColor: isDark ? theme.border : '#f8fafc' }
           ]}
         >
-          <Feather name="edit-2" size={18} color={isDark ? '#94a3b8' : '#64748b'} />
+          <Feather name="edit-2" size={18} color={isDark ? theme.textSecondary : '#64748b'} />
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={onDelete} 
           style={[
             styles.actionBtn, 
-            { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2' }
+            { backgroundColor: isDark ? '#421c1c' : '#fef2f2' }
           ]}
         >
           <Feather name="trash-2" size={18} color="#ef4444" />

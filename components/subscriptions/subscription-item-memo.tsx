@@ -1,10 +1,11 @@
 import React, { memo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { formatCurrency } from '@/lib/utils/format';
 import type { Subscription } from '@/lib/storage/storage-adapter';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 type Props = {
   subscription: Subscription;
@@ -14,7 +15,7 @@ type Props = {
 
 export const SubscriptionItemMemo = memo<Props>(
   ({ subscription, onEdit, onDelete }) => {
-    const colorScheme = useColorScheme() ?? 'light';
+    const colorScheme = useColorScheme();
     const theme = Colors[colorScheme];
     const isDark = colorScheme === 'dark';
 
@@ -41,8 +42,8 @@ export const SubscriptionItemMemo = memo<Props>(
       <View style={[
         styles.container, 
         { 
-          backgroundColor: isDark ? '#171717' : '#fff',
-          borderColor: isDark ? '#262626' : '#f1f5f9',
+          backgroundColor: theme.card,
+          borderColor: theme.border,
           borderRadius: getRadius(100) 
         }
       ]}>
@@ -68,17 +69,17 @@ export const SubscriptionItemMemo = memo<Props>(
 
           <View style={styles.details}>
             <View style={styles.detailRow}>
-              <Ionicons name="time-outline" size={12} color="#94a3b8" />
+              <Ionicons name="time-outline" size={12} color={theme.textSecondary} />
               <Text style={[styles.detailText, isOverdue && styles.overdueText, isUpcoming && styles.upcomingText]}>
                 {isOverdue ? `Terlambat ${Math.abs(daysUntil)} h` : isUpcoming ? `${daysUntil} h lagi` : nextBillingDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
               </Text>
             </View>
-            <View style={[styles.dot, { backgroundColor: isDark ? '#404040' : '#cbd5e1' }]} />
+            <View style={[styles.dot, { backgroundColor: theme.border }]} />
             <Text style={styles.cycleText}>{subscription.billingCycle === 'MONTHLY' ? 'Bulanan' : 'Tahunan'}</Text>
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: isDark ? '#7f1d1d' : '#fef2f2', borderRadius: getRadius(24) }]} onPress={handleDelete}>
+        <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: isDark ? '#421c1c' : '#fef2f2', borderRadius: getRadius(24) }]} onPress={handleDelete}>
           <Ionicons name="trash-outline" size={16} color="#ef4444" />
         </TouchableOpacity>
       </View>

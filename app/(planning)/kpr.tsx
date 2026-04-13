@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TextInput, StyleSheet, useColorScheme as useNativeColorScheme } from 'react-native';
+import { View, Text, ScrollView, TextInput, StyleSheet } from 'react-native';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import { formatCurrency } from '@/lib/utils/format';
 import { Colors, getRadius } from '@/constants/theme';
 import { useTranslation } from 'react-i18next';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function KPRCalculator() {
   const { t } = useTranslation();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
   
@@ -40,7 +41,7 @@ export default function KPRCalculator() {
         <View style={[styles.mainCard, { borderRadius: getRadius(200, 'large'), backgroundColor: theme.tint, shadowColor: theme.tint }]}>
           <Text style={styles.cardLabel}>ANGSURAN PER BULAN (ESTIMASI)</Text>
           <Text style={styles.cardAmount}>{formatCurrency(result.monthlyPayment)}</Text>
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
           <View style={styles.footer}>
              <View><Text style={styles.footLabel}>PINJAMAN POKOK</Text><Text style={styles.footVal}>{formatCurrency(result.loanAmount)}</Text></View>
              <View style={{ alignItems: 'flex-end' }}><Text style={styles.footLabel}>BUNGA TOTAL</Text><Text style={[styles.footVal, { fontWeight: '900' }]}>{formatCurrency(result.totalInterest)}</Text></View>
@@ -50,8 +51,8 @@ export default function KPRCalculator() {
         <View style={styles.form}>
           <View style={[styles.inputBox, { 
             borderRadius: getRadius(100), 
-            backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
-            borderColor: isDark ? '#262626' : '#f1f5f9' 
+            backgroundColor: theme.card, 
+            borderColor: theme.border 
           }]}>
             <Text style={styles.inputLabel}>HARGA PROPERTI (Rp)</Text>
             <TextInput 
@@ -59,15 +60,15 @@ export default function KPRCalculator() {
               keyboardType="numeric" 
               value={propertyPrice} 
               onChangeText={setPropertyPrice} 
-              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
           <View style={styles.row}>
             <View style={[styles.inputBox, { 
               flex: 1, 
               borderRadius: getRadius(100), 
-              backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
-              borderColor: isDark ? '#262626' : '#f1f5f9' 
+              backgroundColor: theme.card, 
+              borderColor: theme.border 
             }]}>
               <Text style={styles.inputLabel}>DP (%)</Text>
               <TextInput 
@@ -75,14 +76,14 @@ export default function KPRCalculator() {
                 keyboardType="numeric" 
                 value={downPaymentPct} 
                 onChangeText={setDownPaymentPct} 
-                placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
             <View style={[styles.inputBox, { 
               flex: 1, 
               borderRadius: getRadius(100), 
-              backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
-              borderColor: isDark ? '#262626' : '#f1f5f9' 
+              backgroundColor: theme.card, 
+              borderColor: theme.border 
             }]}>
               <Text style={styles.inputLabel}>SUKU BUNGA (%)</Text>
               <TextInput 
@@ -90,14 +91,14 @@ export default function KPRCalculator() {
                 keyboardType="numeric" 
                 value={interestRate} 
                 onChangeText={setInterestRate} 
-                placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
           </View>
           <View style={[styles.inputBox, { 
             borderRadius: getRadius(100), 
-            backgroundColor: isDark ? '#1a1a1a' : '#f8fafc', 
-            borderColor: isDark ? '#262626' : '#f1f5f9' 
+            backgroundColor: theme.card, 
+            borderColor: theme.border 
           }]}>
             <Text style={styles.inputLabel}>TENOR (TAHUN)</Text>
             <TextInput 
@@ -105,20 +106,20 @@ export default function KPRCalculator() {
               keyboardType="numeric" 
               value={tenorYears} 
               onChangeText={setTenorYears} 
-              placeholderTextColor={isDark ? '#475569' : '#94a3b8'}
+              placeholderTextColor={theme.textSecondary}
             />
           </View>
         </View>
 
         <View style={[styles.summary, { 
           borderRadius: getRadius(120),
-          backgroundColor: isDark ? '#171717' : '#f1f5f9',
-          borderColor: isDark ? '#262626' : '#e2e8f0',
-          borderWidth: isDark ? 1 : 0
+          backgroundColor: theme.card,
+          borderColor: theme.border,
+          borderWidth: 1
         }]}>
-           <Text style={[styles.sumTitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>RINGKASAN PEMBAYARAN</Text>
-           <View style={styles.sumRow}><Text style={[styles.sumLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>Total Dikembalikan (Pokok + Bunga)</Text><Text style={[styles.sumVal, { color: theme.text }]}>{formatCurrency(result.totalPayment)}</Text></View>
-           <View style={styles.sumRow}><Text style={[styles.sumLabel, { color: isDark ? '#cbd5e1' : '#475569' }]}>Uang Muka (Down Payment)</Text><Text style={[styles.sumVal, { color: theme.text }]}>{formatCurrency(result.dp)}</Text></View>
+           <Text style={[styles.sumTitle, { color: theme.textSecondary }]}>RINGKASAN PEMBAYARAN</Text>
+           <View style={styles.sumRow}><Text style={[styles.sumLabel, { color: theme.text }]}>Total Dikembalikan (Pokok + Bunga)</Text><Text style={[styles.sumVal, { color: theme.text }]}>{formatCurrency(result.totalPayment)}</Text></View>
+           <View style={styles.sumRow}><Text style={[styles.sumLabel, { color: theme.text }]}>Uang Muka (Down Payment)</Text><Text style={[styles.sumVal, { color: theme.text }]}>{formatCurrency(result.dp)}</Text></View>
         </View>
       </ScrollView>
     </ScreenWrapper>
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
   mainCard: { padding: 28, marginBottom: 24, elevation: 12, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
   cardLabel: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.6)', letterSpacing: 1.5 },
   cardAmount: { fontSize: 32, fontWeight: '900', color: '#fff', marginVertical: 10 },
-  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 20 },
+  divider: { height: 1, marginVertical: 20 },
   footer: { flexDirection: 'row', justifyContent: 'space-between' },
   footLabel: { fontSize: 8, fontWeight: '800', color: 'rgba(255,255,255,0.5)', marginBottom: 2 },
   footVal: { fontSize: 14, fontWeight: '700', color: '#fff' },

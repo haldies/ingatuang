@@ -8,12 +8,14 @@ import {
   Linking, 
   Platform, 
   Modal, 
+  UIManager,
+  Switch,
   Pressable,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { storage } from '@/lib/storage/storage-adapter';
+import { eventEmitter, EVENTS } from '@/lib/utils/events';
 import { router } from 'expo-router';
 import { sendLocalNotification } from '@/lib/utils/notifications';
 import { CustomAlert } from '@/components/ui/custom-alert';
@@ -21,22 +23,25 @@ import { resetAIConsent } from '@/lib/ai/ai-consent';
 import { useTranslation } from 'react-i18next';
 import i18n, { LANGUAGE_KEY } from '@/lib/utils/i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updateGlobalCurrency } from '@/lib/utils/format';
+import { updateGlobalCurrency, updateGlobalCompact } from '@/lib/utils/format';
 import { Header } from '@/components/ui/header';
 import { ScreenWrapper } from '@/components/ui/screen-wrapper';
 import WidgetMenuItem from '@/components/settings/WidgetMenuItem';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
   
   // Sheet State
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [sheetType, setSheetType] = useState<'language' | 'currency' | null>(null);
+  const [sheetType, setSheetType] = useState<'language' | 'currency' | 'theme' | null>(null);
   const [currentCurrency, setCurrentCurrency] = useState('IDR');
+  const [currentTheme, setCurrentTheme] = useState<'system' | 'light' | 'dark'>('system');
+  const [isCompact, setIsCompact] = useState(false);
 
   // Alert State
   const [alertVisible, setAlertVisible] = useState(false);
@@ -57,11 +62,17 @@ export default function SettingsScreen() {
   });
 
   useEffect(() => {
-    const loadCurrency = async () => {
-      const curr = await storage.getCurrency();
+    const loadSettings = async () => {
+      const [curr, compact, themeMode] = await Promise.all([
+        storage.getCurrency(),
+        storage.getCompactCurrency(),
+        storage.getTheme()
+      ]);
       setCurrentCurrency(curr);
+      setIsCompact(compact);
+      setCurrentTheme(themeMode);
     };
-    loadCurrency();
+    loadSettings();
   }, []);
 
   const showAlert = (config: typeof alertConfig) => {
@@ -116,7 +127,29 @@ export default function SettingsScreen() {
     }
   };
 
-  const openSheet = (type: 'language' | 'currency') => {
+  const themeOptions = [
+    { id: 'system', name: t('settings.theme_system', 'Otomatis'), icon: 'monitor' },
+    { id: 'light', name: t('settings.theme_light', 'Terang'), icon: 'sun' },
+    { id: 'dark', name: t('settings.theme_dark', 'Gelap'), icon: 'moon' },
+  ];
+
+  const handleSelectTheme = async (mode: 'system' | 'light' | 'dark') => {
+    try {
+      await storage.setTheme(mode);
+      setCurrentTheme(mode);
+      setSheetVisible(false);
+      eventEmitter.emit(EVENTS.THEME_CHANGED);
+      showAlert({
+        title: t('settings.theme_updated', 'Tema Berhasil Diubah'),
+        message: t('settings.theme_updated_desc', 'Pengaturan tema aplikasi telah diperbarui.'),
+        type: 'success'
+      });
+    } catch (err) {
+      showAlert({ title: 'Error', message: 'Gagal mengubah tema', type: 'error' });
+    }
+  };
+
+  const openSheet = (type: 'language' | 'currency' | 'theme') => {
     setSheetType(type);
     setSheetVisible(true);
   };
@@ -132,6 +165,12 @@ export default function SettingsScreen() {
     updateGlobalCurrency(code);
     setCurrentCurrency(code);
     setSheetVisible(false);
+  };
+
+  const handleToggleCompact = async (value: boolean) => {
+    await storage.setCompactCurrency(value);
+    updateGlobalCompact(value);
+    setIsCompact(value);
   };
 
   const languages = [
@@ -153,15 +192,15 @@ export default function SettingsScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* PREMIUM BANNER */}
         <TouchableOpacity 
-          style={[
-            styles.premiumBanner, 
-            { 
-              backgroundColor: isDark ? '#171717' : '#0f172a',
-              borderColor: isDark ? '#262626' : 'transparent',
-              borderWidth: isDark ? 1 : 0,
-              borderRadius: getRadius(80) 
-            }
-          ]} 
+            style={[
+              styles.premiumBanner, 
+              { 
+                backgroundColor: isDark ? theme.card : '#0f172a',
+                borderColor: theme.border,
+                borderWidth: isDark ? 1 : 0,
+                borderRadius: getRadius(80) 
+              }
+            ]} 
           onPress={() => router.push('/premium')} 
           activeOpacity={0.9}
         >
@@ -180,71 +219,102 @@ export default function SettingsScreen() {
 
         {/* MENU GROUP 1: PREFERENCES */}
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => openSheet('language')}>
-            <Feather name="globe" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={() => openSheet('language')}>
+            <Feather name="globe" size={18} color={theme.textSecondary} />
             <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.language')}</Text>
             <View style={styles.badgeContainer}>
-              <Text style={[styles.badgeText, { backgroundColor: isDark ? '#171717' : '#f1f5f9' }]}>{i18n.language === 'id' ? 'ID' : 'EN'}</Text>
-              <Feather name="chevron-right" size={14} color="#9ca3af" />
+              <Text style={[styles.badgeText, { backgroundColor: theme.card, color: theme.textSecondary }]}>{i18n.language === 'id' ? 'ID' : 'EN'}</Text>
+              <Feather name="chevron-right" size={14} color={theme.textSecondary} />
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => openSheet('currency')}>
-            <Feather name="dollar-sign" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={() => openSheet('currency')}>
+            <Feather name="dollar-sign" size={18} color={theme.textSecondary} />
             <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.currency')}</Text>
             <View style={styles.badgeContainer}>
-              <Text style={[styles.badgeText, { backgroundColor: isDark ? '#171717' : '#f1f5f9' }]}>{currentCurrency}</Text>
-              <Feather name="chevron-right" size={14} color="#9ca3af" />
+              <Text style={[styles.badgeText, { backgroundColor: theme.card, color: theme.textSecondary }]}>{currentCurrency}</Text>
+              <Feather name="chevron-right" size={14} color={theme.textSecondary} />
             </View>
           </TouchableOpacity>
 
-          <WidgetMenuItem />
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={() => openSheet('theme')}>
+            <Feather name={currentTheme === 'dark' ? 'moon' : currentTheme === 'light' ? 'sun' : 'monitor'} size={18} color={theme.textSecondary} />
+            <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.theme', 'Tema Aplikasi')}</Text>
+            <View style={styles.badgeContainer}>
+              <Text style={[styles.badgeText, { backgroundColor: theme.card, color: theme.textSecondary }]}>
+                {currentTheme === 'system' ? t('settings.theme_system', 'Otomatis') : 
+                 currentTheme === 'dark' ? t('settings.theme_dark', 'Gelap') : 
+                 t('settings.theme_light', 'Terang')}
+              </Text>
+              <Feather name="chevron-right" size={14} color={theme.textSecondary} />
+            </View>
+          </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/categories')}>
-            <Feather name="grid" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+          <View style={[styles.menuItem, { borderBottomColor: theme.border }]}>
+            <Feather name="minimize-2" size={18} color={theme.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.compact_format')}</Text>
+              <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>{t('settings.compact_format_desc')}</Text>
+            </View>
+            <Switch 
+              value={isCompact} 
+              onValueChange={handleToggleCompact}
+              trackColor={{ false: theme.border, true: theme.tint + '50' }}
+              thumbColor={isCompact ? theme.tint : (isDark ? '#404040' : '#f3f4f6')}
+            />
+          </View>
+
+          {Platform.OS === 'android' && <WidgetMenuItem />}
+
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity 
+              style={[styles.menuItem, { borderBottomColor: theme.border }]} 
+              onPress={() => router.push('/(settings)/api-shortcuts')}
+            >
+              <Feather name="code" size={18} color={theme.textSecondary} />
+              <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>API & Shortcuts</Text>
+              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={() => router.push('/categories')}>
+            <Feather name="grid" size={18} color={theme.textSecondary} />
             <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Kelola Kategori</Text>
-            <Feather name="chevron-right" size={18} color="#9ca3af" />
+            <Feather name="chevron-right" size={18} color={theme.textSecondary} />
           </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/subscriptions')}>
-            <Feather name="calendar" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-            <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Kelola Langganan</Text>
-            <Feather name="chevron-right" size={18} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={() => router.push('/(settings)/privacy-security')}>
-            <Feather name="lock" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={() => router.push('/(settings)/privacy-security')}>
+            <Feather name="lock" size={18} color={theme.textSecondary} />
             <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>Privasi & Keamanan</Text>
-            <Feather name="chevron-right" size={18} color="#9ca3af" />
+            <Feather name="chevron-right" size={18} color={theme.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {/* MENU GROUP 2: DEV TOOLS */}
-        <View style={[styles.devSection, { borderTopColor: isDark ? '#171717' : '#f8fafc' }]}>
-          <Text style={styles.sectionTitle}>{t('settings.dev_tools')}</Text>
+        <View style={[styles.devSection, { borderTopColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{t('settings.dev_tools')}</Text>
           <View style={styles.menuContainer}>
-            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleTestNotification}>
-              <Feather name="bell" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={handleTestNotification}>
+              <Feather name="bell" size={18} color={theme.textSecondary} />
               <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>{t('settings.test_notification')}</Text>
-              <Feather name="chevron-right" size={18} color="#9ca3af" />
+              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
             
-            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleSeedData}>
-              <Feather name="database" size={18} color={isDark ? '#94a3b8' : '#374151'} />
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={handleSeedData}>
+              <Feather name="database" size={18} color={theme.textSecondary} />
               <Text style={[styles.menuTitle, { color: theme.text, flex: 1 }]}>{t('settings.add_sample')}</Text>
-              <Feather name="chevron-right" size={18} color="#9ca3af" />
+              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} onPress={handleClearData}>
+            <TouchableOpacity style={[styles.menuItem, { borderBottomColor: theme.border }]} onPress={handleClearData}>
               <Feather name="trash-2" size={18} color="#ef4444" />
               <Text style={[styles.menuTitle, { color: '#ef4444', flex: 1 }]}>{t('settings.clear_data')}</Text>
-              <Feather name="chevron-right" size={18} color="#9ca3af" />
+              <Feather name="chevron-right" size={18} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>{t('settings.version')} 1.0.0</Text>
+          <Text style={[styles.versionText, { color: theme.textSecondary }]}>{t('settings.version')} 1.0.0</Text>
         </View>
       </ScrollView>
 
@@ -258,9 +328,11 @@ export default function SettingsScreen() {
         <Pressable style={styles.sheetBackdrop} onPress={() => setSheetVisible(false)}>
           <View style={[styles.sheetContent, { backgroundColor: theme.background, borderTopLeftRadius: getRadius(320, 'large'), borderTopRightRadius: getRadius(320, 'large') }]}>
             <View style={styles.sheetHeader}>
-              <View style={[styles.sheetHandle, { backgroundColor: isDark ? '#262626' : '#e2e8f0' }]} />
+              <View style={[styles.sheetHandle, { backgroundColor: theme.border }]} />
               <Text style={[styles.sheetTitle, { color: theme.text }]}>
-                {sheetType === 'language' ? t('settings.select_language') : t('settings.select_currency')}
+                {sheetType === 'language' ? t('settings.select_language') : 
+                 sheetType === 'currency' ? t('settings.select_currency') : 
+                 t('settings.select_theme', 'Pilih Tema')}
               </Text>
             </View>
 
@@ -269,7 +341,7 @@ export default function SettingsScreen() {
                 languages.map((lang) => (
                   <TouchableOpacity 
                     key={lang.code} 
-                    style={[styles.sheetItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
+                    style={[styles.sheetItem, { borderBottomColor: theme.border }]} 
                     onPress={() => handleSelectLanguage(lang.code)}
                   >
                     <Text style={styles.sheetEmoji}>{lang.flag}</Text>
@@ -279,23 +351,41 @@ export default function SettingsScreen() {
                     {i18n.language === lang.code && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
                   </TouchableOpacity>
                 ))
-              ) : (
+              ) : sheetType === 'currency' ? (
                 currencies.map((curr) => (
                   <TouchableOpacity 
                     key={curr.code} 
-                    style={[styles.sheetItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
+                    style={[styles.sheetItem, { borderBottomColor: theme.border }]} 
                     onPress={() => handleSelectCurrency(curr.code)}
                   >
-                    <View style={[styles.currencyIcon, { backgroundColor: isDark ? '#171717' : '#f1f5f9', borderRadius: getRadius(120, 'small') }]}>
+                    <View style={[styles.currencyIcon, { backgroundColor: theme.card, borderRadius: getRadius(120, 'small') }]}>
                       <Text style={[styles.currencySymbol, { color: theme.text }]}>{curr.symbol}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.sheetItemText, { color: theme.text }, currentCurrency === curr.code && styles.sheetItemActive]}>
-                        {curr.code}
+                         {curr.code}
                       </Text>
-                      <Text style={styles.currencyName}>{curr.name}</Text>
+                      <Text style={[styles.currencyName, { color: theme.textSecondary }]}>{curr.name}</Text>
                     </View>
                     {currentCurrency === curr.code && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
+                  </TouchableOpacity>
+                ))
+              ) : (
+                themeOptions.map((opt) => (
+                  <TouchableOpacity 
+                    key={opt.id} 
+                    style={[styles.sheetItem, { borderBottomColor: theme.border }]} 
+                    onPress={() => handleSelectTheme(opt.id as any)}
+                  >
+                    <View style={[styles.currencyIcon, { backgroundColor: theme.card, borderRadius: getRadius(120, 'small') }]}>
+                      <Feather name={opt.icon as any} size={18} color={theme.text} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.sheetItemText, { color: theme.text }, currentTheme === opt.id && styles.sheetItemActive]}>
+                         {opt.name}
+                      </Text>
+                    </View>
+                    {currentTheme === opt.id && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
                   </TouchableOpacity>
                 ))
               )}
@@ -346,11 +436,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#fff',
   },
-  proSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
-  },
   upgradeBtn: {
     width: 40,
     height: 40,
@@ -382,7 +467,6 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#64748b',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -395,7 +479,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '900',
-    color: '#94a3b8',
     letterSpacing: 1.5,
     paddingHorizontal: 20,
     marginBottom: 8,
@@ -406,7 +489,6 @@ const styles = StyleSheet.create({
   },
   versionText: {
     fontSize: 13,
-    color: '#cbd5e1',
     fontWeight: '600',
   },
   sheetBackdrop: {
@@ -466,7 +548,6 @@ const styles = StyleSheet.create({
   },
   currencyName: {
     fontSize: 12,
-    color: '#94a3b8',
     marginTop: 2,
   },
 });

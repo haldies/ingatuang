@@ -25,7 +25,10 @@
     "income": "Pemasukan",
     "expense": "Pengeluaran",
     "reset": "Atur Ulang",
-    "apply": "Terapkan"
+    "apply": "Terapkan",
+    "results": "hasil",
+    "show_all": "Lihat Semua",
+    "show_less": "Sembunyikan"
   },
   "dashboard": {
     "recent_transactions": "Transaksi Terbaru",
@@ -194,7 +197,26 @@
     "privacy_security": "Privasi & Keamanan",
     "remove_ads": "Hapus Iklan",
     "report_bug": "Laporkan Bug",
+    "compact_format": "Format Angka Ringkas",
+    "compact_format_desc": "Tampilkan angka besar dalam bentuk ringkas (contoh: 1rb, 1jt, 1mil).",
+    "theme": "Tema Aplikasi",
+    "select_theme": "Pilih Tema",
+    "theme_system": "Otomatis",
+    "theme_light": "Terang",
+    "theme_dark": "Gelap",
     "give_feedback": "Berikan Masukan",
+    "widgets": {
+      "title": "Widget & Integrasi",
+      "voice_add": "Input Suara (AI)",
+      "voice_desc": "Katakan: \"Ok Google, catat...\"",
+      "manual_widget": "Widget Manual",
+      "manual_desc": "Form input cepat dari Home Screen",
+      "generate_api": "Buat API Key",
+      "api_key_desc": "Gunakan kunci ini untuk integrasi dengan iOS Shortcuts atau aplikasi luar.",
+      "copy_key": "Salin API Key",
+      "download_shortcut": "Unduh iOS Shortcut",
+      "shortcut_desc": "Otomatisasi pencatatan dengan Pintasan Siri."
+    },
     "rate_app": "Beri Nilai IngatUang di",
     "dev_tools": "ALAT PENGEMBANGAN",
     "test_notification": "Test Notifikasi",

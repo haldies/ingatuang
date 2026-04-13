@@ -1,21 +1,24 @@
-import { TouchableOpacity, View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function WidgetMenuItem() {
+  const { t } = useTranslation();
   const router = useRouter();
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
   
   return (
     <TouchableOpacity 
-      style={[styles.menuItem, { borderBottomColor: isDark ? '#171717' : '#f8fafc' }]} 
+      style={[styles.menuItem, { borderBottomColor: theme.border }]} 
       onPress={() => router.push('/(settings)/widgets' as any)}
     >
-      <Feather name="layout" size={18} color={isDark ? '#94a3b8' : '#374151'} />
-      <Text style={[styles.menuTitle, { color: theme.text }]}>Widgets</Text>
+      <Feather name="layers" size={18} color={isDark ? theme.textSecondary : '#374151'} />
+      <Text style={[styles.menuTitle, { color: theme.text }]}>{t('settings.widgets.title')}</Text>
       <View style={{ flex: 1 }} />
       <Feather name="chevron-right" size={18} color="#9ca3af" />
     </TouchableOpacity>

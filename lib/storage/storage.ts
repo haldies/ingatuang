@@ -76,6 +76,9 @@ const STORAGE_KEYS = {
   WALLETS: '@ingat_uang:wallets',
   SELECTED_WALLET: '@ingat_uang:selected_wallet',
   CURRENCY: '@ingat_uang:currency',
+  COMPACT_CURRENCY: '@ingat_uang:compact_currency',
+  API_KEY: '@ingat_uang:api_key',
+  THEME: '@ingat_uang:theme',
 };
 
 // Default categories
@@ -1122,4 +1125,37 @@ export async function getCurrency(): Promise<string> {
 export async function setCurrency(currency: string): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEYS.CURRENCY, currency);
   eventEmitter.emit(EVENTS.WALLET_UPDATED); // Re-use wallet update event to refresh UI
+}
+
+export async function getCompactCurrency(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(STORAGE_KEYS.COMPACT_CURRENCY);
+    return val === 'true';
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function setCompactCurrency(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.COMPACT_CURRENCY, enabled ? 'true' : 'false');
+  eventEmitter.emit(EVENTS.WALLET_UPDATED);
+}
+
+export async function getApiKey(): Promise<string | null> {
+  return await AsyncStorage.getItem(STORAGE_KEYS.API_KEY);
+}
+
+export async function generateApiKey(): Promise<string> {
+  const key = Array.from({ length: 32 }, () => Math.random().toString(36).charAt(2)).join('');
+  await AsyncStorage.setItem(STORAGE_KEYS.API_KEY, key);
+  return key;
+}
+
+export async function getTheme(): Promise<'system' | 'light' | 'dark'> {
+  const theme = await AsyncStorage.getItem(STORAGE_KEYS.THEME);
+  return (theme as 'system' | 'light' | 'dark') || 'system';
+}
+
+export async function setTheme(theme: 'system' | 'light' | 'dark'): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.THEME, theme);
 }

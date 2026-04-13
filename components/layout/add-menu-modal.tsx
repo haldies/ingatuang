@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Animated, Platform } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { BlurView } from 'expo-blur';
+import { Colors } from '@/constants/theme';
 
 interface AddMenuModalProps {
   visible: boolean;
@@ -20,6 +22,10 @@ export function AddMenuModal({
   onSubscriptionPress,
   onSplitBillPress,
 }: AddMenuModalProps) {
+  const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
+
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const blurOpacity = useRef(new Animated.Value(0)).current;
   
@@ -31,13 +37,11 @@ export function AddMenuModal({
 
   useEffect(() => {
     if (visible) {
-      // Reset semua animasi
       item1Anim.setValue(0);
       item2Anim.setValue(0);
       item3Anim.setValue(0);
       item4Anim.setValue(0);
       
-      // Fade in overlay dan blur
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 1,
@@ -51,68 +55,22 @@ export function AddMenuModal({
         }),
       ]).start();
 
-      // Item muncul satu per satu dengan delay
-      const staggerDelay = 80; // Delay antar item
+      const staggerDelay = 80;
       
       Animated.stagger(staggerDelay, [
-        Animated.spring(item1Anim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }),
-        Animated.spring(item2Anim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }),
-        Animated.spring(item3Anim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }),
-        Animated.spring(item4Anim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 8,
-        }),
+        Animated.spring(item1Anim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
+        Animated.spring(item2Anim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
+        Animated.spring(item3Anim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
+        Animated.spring(item4Anim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 8 }),
       ]).start();
     } else {
-      // Animasi keluar - semua sekaligus
       Animated.parallel([
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(blurOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(item1Anim, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(item2Anim, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(item3Anim, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
-        Animated.timing(item4Anim, {
-          toValue: 0,
-          duration: 150,
-          useNativeDriver: true,
-        }),
+        Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(blurOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(item1Anim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(item2Anim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(item3Anim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(item4Anim, { toValue: 0, duration: 150, useNativeDriver: true }),
       ]).start();
     }
   }, [visible]);
@@ -122,12 +80,10 @@ export function AddMenuModal({
       inputRange: [0, 1],
       outputRange: [100, 0],
     });
-    
     const scale = animValue.interpolate({
       inputRange: [0, 1],
       outputRange: [0.3, 1],
     });
-
     return {
       opacity: animValue,
       transform: [
@@ -142,8 +98,8 @@ export function AddMenuModal({
       <Animated.View style={[styles.overlay, { opacity: opacityAnim }]}>
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: blurOpacity }]}>
           <BlurView 
-            intensity={100} 
-            tint="light" 
+            intensity={isDark ? 50 : 100} 
+            tint={isDark ? "dark" : "light"} 
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -152,60 +108,44 @@ export function AddMenuModal({
           activeOpacity={1} 
           onPress={onClose}
         >
-          <Animated.View style={styles.menuContainer}>
-            {/* Catat Transaksi */}
+          <Animated.View style={[styles.menuContainer, { backgroundColor: theme.background }]}>
+            {/* Input Manual */}
             <Animated.View style={getItemStyle(item1Anim)}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={onTransactionPress}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconContainer}>
-                  <Ionicons name="receipt-outline" size={20} color="#374151" />
+              <TouchableOpacity style={styles.menuItem} onPress={onTransactionPress} activeOpacity={0.7}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.card }]}>
+                  <Ionicons name="receipt-outline" size={20} color={isDark ? theme.text : '#374151'} />
                 </View>
-                <Text style={styles.menuTitle}>Input Manual</Text>
+                <Text style={[styles.menuTitle, { color: theme.text }]}>Input Manual</Text>
               </TouchableOpacity>
             </Animated.View>
 
-            {/* Quick Add AI */}
+            {/* Quick Add */}
             <Animated.View style={getItemStyle(item2Anim)}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={onQuickAddPress}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconContainer}>
-                  <Ionicons name="sparkles-outline" size={20} color="#374151" />
+              <TouchableOpacity style={styles.menuItem} onPress={onQuickAddPress} activeOpacity={0.7}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.card }]}>
+                  <Ionicons name="sparkles-outline" size={20} color={isDark ? theme.text : '#374151'} />
                 </View>
-                <Text style={styles.menuTitle}>Quick Add</Text>
+                <Text style={[styles.menuTitle, { color: theme.text }]}>Quick Add</Text>
               </TouchableOpacity>
             </Animated.View>
 
             {/* Langganan */}
             <Animated.View style={getItemStyle(item3Anim)}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={onSubscriptionPress}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconContainer}>
-                  <Ionicons name="calendar-outline" size={20} color="#374151" />
+              <TouchableOpacity style={styles.menuItem} onPress={onSubscriptionPress} activeOpacity={0.7}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.card }]}>
+                  <Ionicons name="calendar-outline" size={20} color={isDark ? theme.text : '#374151'} />
                 </View>
-                <Text style={styles.menuTitle}>Langganan</Text>
+                <Text style={[styles.menuTitle, { color: theme.text }]}>Langganan</Text>
               </TouchableOpacity>
             </Animated.View>
 
             {/* Split Bill */}
             <Animated.View style={getItemStyle(item4Anim)}>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={onSplitBillPress}
-                activeOpacity={0.7}
-              >
-                <View style={styles.iconContainer}>
-                  <Ionicons name="git-branch-outline" size={20} color="#374151" />
+              <TouchableOpacity style={styles.menuItem} onPress={onSplitBillPress} activeOpacity={0.7}>
+                <View style={[styles.iconContainer, { backgroundColor: theme.card }]}>
+                  <Ionicons name="git-branch-outline" size={20} color={isDark ? theme.text : '#374151'} />
                 </View>
-                <Text style={styles.menuTitle}>Split Bill</Text>
+                <Text style={[styles.menuTitle, { color: theme.text }]}>Split Bill</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -216,23 +156,16 @@ export function AddMenuModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-  },
-  overlayTouchable: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 100,
-  },
+  overlay: { flex: 1 },
+  overlayTouchable: { flex: 1, justifyContent: 'flex-end', paddingBottom: 100 },
   menuContainer: {
-    backgroundColor: '#fff',
     marginHorizontal: 24,
     marginBottom: 20,
     borderRadius: 18,
     padding: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 4,
   },
@@ -244,23 +177,15 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 2,
   },
-  menuItemDisabled: {
-    opacity: 0.5,
-  },
   iconContainer: {
     width: 36,
     height: 36,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f3f4f6',
-  },
-  menuContent: {
-    flex: 1,
   },
   menuTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#111827',
   },
 });

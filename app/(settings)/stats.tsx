@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
-  useColorScheme as useNativeColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Header } from '@/components/ui/header';
@@ -16,6 +15,7 @@ import { exportTransactions, type ExportPeriod } from '@/lib/utils/export';
 import { Calendar } from 'react-native-calendars';
 import { CustomAlert } from '@/components/ui/custom-alert';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const PERIOD_OPTIONS = [
   { value: 'current-month', label: 'Bulan Ini' },
@@ -27,7 +27,7 @@ const PERIOD_OPTIONS = [
 ] as const;
 
 export default function StatsReportScreen() {
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -68,8 +68,8 @@ export default function StatsReportScreen() {
         <View style={[
           styles.mainCard, 
           { 
-            backgroundColor: isDark ? '#171717' : '#fff',
-            borderColor: isDark ? '#262626' : '#f1f5f9',
+            backgroundColor: theme.card,
+            borderColor: theme.border,
             borderRadius: getRadius(180, 'large') 
           }
         ]}>
@@ -79,7 +79,7 @@ export default function StatsReportScreen() {
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={[styles.cardTitle, { color: theme.text }]}>Laporan Finansial</Text>
-              <Text style={[styles.cardSubtitle, { color: isDark ? '#94A3B8' : '#64748b' }]}>Terima statistik lengkap kamu dalam format yang mudah dibaca.</Text>
+              <Text style={[styles.cardSubtitle, { color: theme.textSecondary }]}>Terima statistik lengkap kamu dalam format yang mudah dibaca.</Text>
             </View>
           </View>
 
@@ -89,8 +89,8 @@ export default function StatsReportScreen() {
               style={[
                 styles.dropdown, 
                 { 
-                  backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                  borderColor: isDark ? '#262626' : '#f1f5f9',
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
                   borderRadius: getRadius(64) 
                 }
               ]} 
@@ -99,15 +99,15 @@ export default function StatsReportScreen() {
               <Text style={[styles.dropdownText, { color: theme.text }]}>
                 {PERIOD_OPTIONS.find(opt => opt.value === period)?.label || 'Pilih periode'}
               </Text>
-              <Ionicons name={showPeriodDropdown ? "chevron-up" : "chevron-down"} size={20} color="#94a3b8" />
+              <Ionicons name={showPeriodDropdown ? "chevron-up" : "chevron-down"} size={20} color={theme.textSecondary} />
             </TouchableOpacity>
             
             {showPeriodDropdown && (
               <View style={[
                 styles.dropdownMenu, 
                 { 
-                  backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                  borderColor: isDark ? '#262626' : '#f1f5f9',
+                  backgroundColor: theme.card,
+                  borderColor: theme.border,
                   borderRadius: getRadius(120) 
                 }
               ]}>
@@ -116,12 +116,12 @@ export default function StatsReportScreen() {
                     key={option.value} 
                     style={[
                       styles.dropdownItem, 
-                      { borderBottomColor: isDark ? '#262626' : '#f1f5f9' },
-                      period === option.value && (isDark ? { backgroundColor: theme.tint + '15' } : styles.dropdownActive)
+                      { borderBottomColor: theme.border },
+                      period === option.value && { backgroundColor: theme.tint + '15' }
                     ]} 
                     onPress={() => { setPeriod(option.value as ExportPeriod); setShowPeriodDropdown(false); }}
                   >
-                    <Text style={[styles.itemText, { color: isDark ? '#94A3B8' : '#475569' }, period === option.value && { color: theme.tint, fontWeight: '800' }]}>{option.label}</Text>
+                    <Text style={[styles.itemText, { color: theme.textSecondary }, period === option.value && { color: theme.tint, fontWeight: '800' }]}>{option.label}</Text>
                     {period === option.value && <Ionicons name="checkmark-circle" size={20} color={theme.tint} />}
                   </TouchableOpacity>
                 ))}
@@ -136,17 +136,17 @@ export default function StatsReportScreen() {
                 style={[
                   styles.dropdown, 
                   { 
-                    backgroundColor: isDark ? '#1a1a1a' : '#fff',
-                    borderColor: isDark ? '#262626' : '#f1f5f9',
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
                     borderRadius: getRadius(64) 
                   }
                 ]} 
                 onPress={() => setShowCalendar(true)}
               >
-                <Text style={[styles.dropdownText, !customDate && { color: '#94a3b8' }, customDate && { color: theme.text }]}>
+                <Text style={[styles.dropdownText, !customDate && { color: theme.textSecondary }, customDate && { color: theme.text }]}>
                   {customDate ? customDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }) : 'Ketuk untuk pilih...'}
                 </Text>
-                <Ionicons name="calendar-outline" size={20} color="#94a3b8" />
+                <Ionicons name="calendar-outline" size={20} color={theme.textSecondary} />
               </TouchableOpacity>
             </View>
           )}
@@ -172,7 +172,7 @@ export default function StatsReportScreen() {
           styles.infoBox, 
           { 
             borderRadius: getRadius(100),
-            backgroundColor: isDark ? '#064e3b20' : '#f0fdfa',
+            backgroundColor: isDark ? '#064e3b30' : '#f0fdfa',
             borderColor: isDark ? '#065f46' : '#ccfbf1'
           }
         ]}>
@@ -183,17 +183,17 @@ export default function StatsReportScreen() {
 
       <Modal visible={showCalendar} transparent animationType="fade">
         <Pressable style={styles.overlay} onPress={() => setShowCalendar(false)}>
-          <View style={[styles.calendarSheet, { backgroundColor: isDark ? '#171717' : '#fff', borderRadius: getRadius(120) }]}>
+          <View style={[styles.calendarSheet, { backgroundColor: theme.background, borderRadius: getRadius(120), borderWidth: isDark ? 1 : 0, borderColor: theme.border }]}>
             <Calendar 
               onDayPress={(day: any) => { setCustomDate(new Date(day.dateString)); setShowCalendar(false); }} 
               theme={{ 
-                calendarBackground: isDark ? '#171717' : '#fff',
-                textSectionTitleColor: isDark ? '#94A3B8' : '#b6c1cd',
-                dayTextColor: isDark ? '#fff' : '#2d4150',
+                calendarBackground: theme.background,
+                textSectionTitleColor: theme.textSecondary,
+                dayTextColor: theme.text,
                 todayTextColor: theme.tint, 
                 selectedDayBackgroundColor: theme.tint, 
                 arrowColor: theme.tint,
-                monthTextColor: isDark ? '#fff' : '#2d4150',
+                monthTextColor: theme.text,
                 textDisabledColor: isDark ? '#404040' : '#d9e1e8',
               }} 
             />
@@ -227,7 +227,6 @@ const styles = StyleSheet.create({
   dropdownText: { fontSize: 14, fontWeight: '800' },
   dropdownMenu: { marginTop: 8, borderWidth: 1, overflow: 'hidden' },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1 },
-  dropdownActive: { backgroundColor: Colors.light.tint + '08' },
   itemText: { fontSize: 14, fontWeight: '600' },
   exportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 18, marginTop: 12 },
   exportBtnText: { color: '#fff', fontSize: 15, fontWeight: '900', letterSpacing: 0.5 },

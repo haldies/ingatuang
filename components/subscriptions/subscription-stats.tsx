@@ -1,14 +1,15 @@
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { formatCurrency } from '@/lib/utils/format';
 import type { SubscriptionStats } from '@/lib/storage/storage-adapter';
 import { Colors, getRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface SubscriptionStatsProps {
   stats: SubscriptionStats;
 }
 
 export function SubscriptionStatsComponent({ stats }: SubscriptionStatsProps) {
-  const colorScheme = useColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
 
@@ -16,8 +17,8 @@ export function SubscriptionStatsComponent({ stats }: SubscriptionStatsProps) {
     <View style={[
       styles.container, 
       { 
-        backgroundColor: isDark ? '#171717' : '#fff',
-        borderColor: isDark ? '#262626' : '#f1f5f9',
+        backgroundColor: theme.background,
+        borderColor: theme.border,
         borderRadius: getRadius(180, 'large'),
         shadowColor: theme.tint 
       }
@@ -33,19 +34,19 @@ export function SubscriptionStatsComponent({ stats }: SubscriptionStatsProps) {
         <View style={[
           styles.secondaryStat, 
           { 
-            backgroundColor: isDark ? '#1a1a1a' : '#f8fafc',
-            borderColor: isDark ? '#262626' : '#f1f5f9',
+            backgroundColor: theme.card,
+            borderColor: theme.border,
             borderRadius: getRadius(56) 
           }
         ]}>
           <Text style={styles.secondaryLabel}>TAHUNAN</Text>
-          <Text style={[styles.secondaryValue, { color: isDark ? '#e5e7eb' : '#1e293b' }]}>{formatCurrency(stats.yearlyCost)}</Text>
+          <Text style={[styles.secondaryValue, { color: theme.textSecondary }]}>{formatCurrency(stats.yearlyCost)}</Text>
         </View>
         <View style={[
           styles.secondaryStat, 
           { 
-            backgroundColor: isDark ? '#1a1a1a' : '#f8fafc',
-            borderColor: isDark ? '#262626' : '#f1f5f9',
+            backgroundColor: theme.card,
+            borderColor: theme.border,
             borderRadius: getRadius(56) 
           }
         ]}>

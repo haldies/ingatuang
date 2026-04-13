@@ -15,8 +15,8 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
-  useColorScheme as useNativeColorScheme
 } from 'react-native';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import {
@@ -48,8 +48,9 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const router = useRouter();
-  const colorScheme = useNativeColorScheme() ?? 'light';
+  const colorScheme = useColorScheme();
   const theme = Colors[colorScheme];
+  const isDark = colorScheme === 'dark';
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -124,6 +125,7 @@ export default function DashboardScreen() {
     const handleTransactionEvent = () => loadData(true);
     eventEmitter.on(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
     eventEmitter.on(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
+    eventEmitter.on(EVENTS.WALLET_UPDATED, handleTransactionEvent);
 
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') loadData(true);
@@ -132,6 +134,7 @@ export default function DashboardScreen() {
     return () => {
       eventEmitter.off(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
       eventEmitter.off(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
+      eventEmitter.off(EVENTS.WALLET_UPDATED, handleTransactionEvent);
       subscription.remove();
     };
   }, [loadData]);
@@ -141,39 +144,32 @@ export default function DashboardScreen() {
     const handleDeepLink = (url: string) => {
       const { hostname, queryParams } = Linking.parse(url);
       
-      // Abaikan link internal Expo Development Client agar tidak mengotori log
       if (hostname === 'expo-development-client') return;
 
       console.log('🔗 [DeepLink] Received URL:', url);
-      console.log('🔗 [DeepLink] Query Params:', queryParams);
       
       if (queryParams?.assistant_action === 'add_transaction') {
         const notes = queryParams?.notes as string;
         const amountStr = queryParams?.amount as string;
-        console.log('🔗 [DeepLink] Action: add_transaction, Notes:', notes, 'Amount:', amountStr);
-        
         const amount = parseFloat(amountStr) || 0;
         
-        // Open modal with prefilled data
         setSelectedTransaction({
           id: 'temp-' + Date.now(),
           type: 'EXPENSE',
           amount: amount,
           date: new Date().toISOString(),
           notes: notes,
-          categoryId: '', // Will be selected in modal or default
+          categoryId: '',
+          walletId: 'default',
           createdAt: new Date().toISOString(),
         });
         setIsAddModalOpen(true);
       }
     };
 
-    // Get initial URL
     Linking.getInitialURL().then(url => {
       if (url) handleDeepLink(url);
     });
-
-    // Listen for changes
     const subscription = Linking.addEventListener('url', (event) => {
       handleDeepLink(event.url);
     });
@@ -258,11 +254,11 @@ export default function DashboardScreen() {
 
   const renderHeader = useCallback(() => (
     <View style={[styles.headerContainer, { backgroundColor: theme.background }]}>
-      <View style={[styles.toolbar, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+      <View style={[styles.toolbar, { borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={[
             styles.toolbarButton, 
-            { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' },
+            { backgroundColor: isDark ? theme.card : '#f8fafc' },
             hasActiveFilters && { backgroundColor: theme.tint + '15' }
           ]}
           onPress={() => setIsFilterOpen(true)}
@@ -282,7 +278,7 @@ export default function DashboardScreen() {
         </View>
 
         <TouchableOpacity 
-          style={[styles.toolbarButton, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f8fafc' }]} 
+          style={[styles.toolbarButton, { backgroundColor: isDark ? theme.card : '#f8fafc' }]} 
           onPress={() => router.push('/search')}
         >
           <Ionicons name="search" size={20} color={theme.text} />
@@ -291,7 +287,7 @@ export default function DashboardScreen() {
 
       {displayStats && <BalanceCard stats={displayStats} />}
 
-      <View style={[styles.quickMenuContainer, { borderBottomColor: colorScheme === 'dark' ? '#1a1a1a' : '#f8fafc' }]}>
+      <View style={[styles.quickMenuContainer, { borderBottomColor: isDark ? theme.background : '#f8fafc' }]}>
         <View style={styles.quickMenuGrid}>
           {[
             { id: 'subscriptions', name: t('features.subscriptions'), icon: 'calendar', path: '/subscriptions' },
@@ -300,10 +296,10 @@ export default function DashboardScreen() {
             { id: 'all-menus', name: t('common.all_menus'), icon: 'grid', path: '/all-menus' },
           ].map((item) => (
             <TouchableOpacity key={item.id} style={styles.quickMenuItem} onPress={() => router.push(item.path as any)}>
-              <View style={[styles.quickMenuIcon, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
-                <Feather name={item.icon as any} size={22} color={colorScheme === 'dark' ? '#e2e8f0' : '#334155'} />
+              <View style={[styles.quickMenuIcon, { backgroundColor: theme.card }]}>
+                <Feather name={item.icon as any} size={22} color={isDark ? theme.textSecondary : '#334155'} />
               </View>
-              <Text style={[styles.quickMenuText, { color: colorScheme === 'dark' ? '#94a3b8' : '#475569' }]} numberOfLines={1}>
+              <Text style={[styles.quickMenuText, { color: theme.textSecondary }]} numberOfLines={1}>
                 {item.name}
               </Text>
             </TouchableOpacity>
@@ -320,7 +316,7 @@ export default function DashboardScreen() {
         </View>
       )}
     </View>
-  ), [hasActiveFilters, currentDate, displayStats, filteredTransactions.length, t, router, theme, colorScheme]);
+  ), [hasActiveFilters, currentDate, displayStats, filteredTransactions.length, t, router, theme, isDark]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -332,7 +328,7 @@ export default function DashboardScreen() {
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="receipt-outline" size={64} color={colorScheme === 'dark' ? '#262626' : '#e2e8f0'} />
+            <Ionicons name="receipt-outline" size={64} color={isDark ? theme.card : '#e2e8f0'} />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('dashboard.no_transactions')}</Text>
             <Text style={styles.emptySubtitle}>{t('dashboard.no_results_desc')}</Text>
           </View>
@@ -365,7 +361,7 @@ export default function DashboardScreen() {
               borderTopRightRadius: getRadius(400, 'large') 
             }
           ]}>
-            <View style={[styles.sheetHeader, { borderBottomColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+            <View style={[styles.sheetHeader, { borderBottomColor: theme.border }]}>
               <Text style={[styles.sheetTitle, { color: theme.text }]}>{t('common.filter')}</Text>
               <TouchableOpacity onPress={() => setIsFilterOpen(false)}>
                 <Ionicons name="close" size={24} color={theme.text} />
@@ -378,7 +374,7 @@ export default function DashboardScreen() {
                   <TouchableOpacity 
                     style={[
                       styles.filterChip, 
-                      { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' },
+                      { backgroundColor: theme.card },
                       selectedWalletId === 'all' && { backgroundColor: theme.tint }
                     ]} 
                     onPress={() => setSelectedWalletId('all')}
@@ -396,7 +392,7 @@ export default function DashboardScreen() {
                       key={w.id} 
                       style={[
                         styles.filterChip, 
-                        { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' },
+                        { backgroundColor: theme.card },
                         selectedWalletId === w.id && { backgroundColor: theme.tint }
                       ]} 
                       onPress={() => setSelectedWalletId(w.id)}
@@ -415,31 +411,66 @@ export default function DashboardScreen() {
               </View>
               <View style={styles.filterSection}>
                 <Text style={[styles.sectionLabel, { color: theme.text }]}>{t('common.type')}</Text>
-                <View style={[styles.typeSwitcher, { backgroundColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+                <View style={[styles.typeSwitcher, { backgroundColor: theme.card }]}>
                   {['ALL', 'INCOME', 'EXPENSE'].map(type => (
                     <TouchableOpacity 
                       key={type} 
                       style={[
                         styles.typeButton, 
-                        selectedType === type && { backgroundColor: colorScheme === 'dark' ? '#404040' : '#fff', elevation: 2, shadowOpacity: 0.05 }
+                        selectedType === type && { backgroundColor: isDark ? theme.border : '#fff', elevation: 2, shadowOpacity: 0.05 }
                       ]} 
                       onPress={() => setSelectedType(type as any)}
                     >
                       <Text style={[
                         styles.typeButtonText, 
-                        { color: colorScheme === 'dark' ? '#94a3b8' : '#64748b' },
+                        { color: theme.textSecondary },
                         selectedType === type && { color: theme.tint }
                       ]}>
-                        {type}
+                        {type === 'ALL' ? t('common.all') : type === 'INCOME' ? t('common.income') : t('common.expense')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={[styles.sectionLabel, { color: theme.text, marginBottom: 0 }]}>{t('common.category')}</Text>
+                  {availableCategories.length > 6 && (
+                    <TouchableOpacity onPress={() => setIsCategoryExpanded(!isCategoryExpanded)}>
+                      <Text style={{ fontSize: 13, color: theme.tint, fontWeight: '700' }}>
+                        {isCategoryExpanded ? t('common.show_less') : t('common.show_all')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  {(isCategoryExpanded ? availableCategories : availableCategories.slice(0, 6)).map(cat => (
+                    <TouchableOpacity 
+                      key={cat.id} 
+                      style={[
+                        styles.filterChip, 
+                        { backgroundColor: theme.card },
+                        selectedCategories.includes(cat.id) && { backgroundColor: theme.tint }
+                      ]} 
+                      onPress={() => toggleCategory(cat.id)}
+                    >
+                      <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
+                      <Text style={[
+                        styles.filterChipText, 
+                        { color: theme.text },
+                        selectedCategories.includes(cat.id) && { color: '#fff' }
+                      ]}>
+                        {cat.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
             </ScrollView>
-            <View style={[styles.sheetFooter, { borderTopColor: colorScheme === 'dark' ? '#262626' : '#f1f5f9' }]}>
+            <View style={[styles.sheetFooter, { borderTopColor: theme.border }]}>
                <TouchableOpacity 
-                  style={[styles.resetBtn, { borderColor: colorScheme === 'dark' ? '#404040' : '#e2e8f0' }]} 
+                  style={[styles.resetBtn, { borderColor: theme.border }]} 
                   onPress={clearFilters}
                 >
                   <Text style={styles.resetBtnText}>{t('common.reset')}</Text>

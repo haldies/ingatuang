@@ -25,7 +25,10 @@
     "income": "Income",
     "expense": "Expense",
     "reset": "Reset",
-    "apply": "Apply"
+    "apply": "Apply",
+    "results": "results",
+    "show_all": "Show All",
+    "show_less": "Show Less"
   },
   "dashboard": {
     "recent_transactions": "Recent Transactions",
@@ -192,7 +195,26 @@
     "privacy_security": "Privacy & Security",
     "remove_ads": "Remove Ads",
     "report_bug": "Report a Bug",
+    "compact_format": "Compact Number Format",
+    "compact_format_desc": "Display large numbers in compact form (e.g., 1k, 1M, 1B).",
+    "theme": "App Theme",
+    "select_theme": "Select Theme",
+    "theme_system": "System",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
     "give_feedback": "Give Feedback",
+    "widgets": {
+      "title": "Widgets & Integration",
+      "voice_add": "Voice Add (AI)",
+      "voice_desc": "Say: \"Ok Google, note...\"",
+      "manual_widget": "Manual Widget",
+      "manual_desc": "Quick input form from Home Screen",
+      "generate_api": "Generate API Key",
+      "api_key_desc": "Use this key to integrate with iOS Shortcuts or external apps.",
+      "copy_key": "Copy API Key",
+      "download_shortcut": "Download iOS Shortcut",
+      "shortcut_desc": "Automate recording with a Siri Shortcut."
+    },
     "rate_app": "Rate IngatUang on",
     "dev_tools": "DEVELOPMENT TOOLS",
     "test_notification": "Test Notification",
