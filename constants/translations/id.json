@@ -224,7 +224,34 @@
     "add_sample": "Tambah Sample Data",
     "clear_data": "Hapus Semua Data",
     "version": "Ingat Uang Mobile v1.0.0",
-    "local_data_notice": "Data tersimpan lokal di perangkat Anda"
+    "local_data_notice": "Data tersimpan lokal di perangkat Anda",
+    "api": {
+      "header": "API & Service",
+      "status_connected": "Terhubung ke Service",
+      "status_failed": "Gagal Terhubung",
+      "status_disconnected": "Belum Terkoneksi",
+      "config_title": "KONFIGURASI SERVICE",
+      "server_url": "URL Server (Backend)",
+      "api_key": "API Key Dashboard",
+      "get_key_web": "Dapatkan API Key di Dashboard Web →",
+      "test_connection": "Test Koneksi",
+      "save_settings": "Simpan",
+      "save_success": "Pengaturan berhasil disimpan",
+      "api_usage_info": "API Key digunakan untuk sinkronisasi data dengan layanan cloud IngatUang secara aman."
+    },
+    "auth": {
+      "login_title": "Masuk ke Akun",
+      "login_desc": "Sync dan backup data Anda.",
+      "email": "Email",
+      "password": "Password",
+      "login_btn": "Masuk Sekarang",
+      "logging_in": "Memproses...",
+      "login_success": "Berhasil Masuk",
+      "login_error": "Email atau password salah",
+      "logout": "Keluar Akun",
+      "not_logged_in": "Belum Masuk",
+      "profile": "Profil"
+    }
   },
   "tax": {
     "header": "Pajak Penghasilan (PPh)",

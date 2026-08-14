@@ -48,7 +48,7 @@ export async function getAllTransactions(): Promise<Transaction[]> {
 }
 
 export async function addTransaction(
-  transaction: Omit<Transaction, 'id' | 'createdAt'>
+  transaction: Omit<Transaction, 'id' | 'createdAt'> & Partial<Pick<Transaction, 'id' | 'createdAt'>>
 ): Promise<Transaction | null> {
   if (!isRoomAvailable) {
     console.warn('Room Storage is only available on Android');
@@ -248,6 +248,8 @@ export interface Subscription {
   nextBillingDate: string;
   isActive: boolean;
   description?: string;
+  icon?: string;
+  color?: string;
   createdAt: string;
 }
 

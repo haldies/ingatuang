@@ -1,4 +1,4 @@
-const { withAndroidManifest, withAppBuildGradle, withMainApplication, withDangerousMod } = require('@expo/config-plugins');
+const { withAndroidManifest, withAppBuildGradle, withProjectBuildGradle, withMainApplication, withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -6,6 +6,9 @@ const path = require('path');
  * Main Plugin
  */
 function withMyCustomNative(config) {
+  // 0. Tambahkan mirror Maven agar build tetap jalan jika Maven Central diblokir
+  config = withMavenMirror(config);
+
   // 1. Tambahkan dependensi Room ke build.gradle
   config = withRoomDependencies(config);
 
@@ -19,6 +22,25 @@ function withMyCustomNative(config) {
   config = withCopyNativeFiles(config);
 
   return config;
+}
+
+/**
+ * Step 0: root build.gradle repositories
+ */
+function withMavenMirror(config) {
+  return withProjectBuildGradle(config, (config) => {
+    if (config.modResults.language === 'groovy') {
+      const mirror = "maven { url 'https://maven.aliyun.com/repository/public' }";
+
+      if (!config.modResults.contents.includes(mirror)) {
+        config.modResults.contents = config.modResults.contents.replace(
+          /google\(\)\n/g,
+          `google()\n    ${mirror}\n`
+        );
+      }
+    }
+    return config;
+  });
 }
 
 /**
@@ -138,6 +160,7 @@ function withCopyNativeFiles(config) {
         { src: 'res/xml', dest: 'res/xml' },
         { src: 'res/layout', dest: 'res/layout' },
         { src: 'res/drawable', dest: 'res/drawable' },
+        { src: 'res/raw', dest: 'res/raw' },
         { src: 'res/values', dest: 'res/values' }
       ];
 

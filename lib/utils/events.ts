@@ -40,4 +40,7 @@ export const EVENTS = {
   WALLET_UPDATED: 'wallet_updated',
   APP_RESUMED: 'app_resumed',
   THEME_CHANGED: 'theme_changed',
+  SYNC_COMPLETED: 'sync_completed',         // Fired after full sync finishes
+  SERVER_DATA_AVAILABLE: 'server_data_available', // Fired when new server data was pulled
 } as const;
+

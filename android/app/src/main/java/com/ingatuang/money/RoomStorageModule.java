@@ -73,13 +73,13 @@ public class RoomStorageModule extends ReactContextBaseJavaModule {
     public void addTransaction(ReadableMap transactionMap, Promise promise) {
         executorService.execute(() -> {
             try {
-                String id = String.valueOf(System.currentTimeMillis());
+                String id = transactionMap.hasKey("id") ? transactionMap.getString("id") : String.valueOf(System.currentTimeMillis());
                 double amount = transactionMap.getDouble("amount");
                 String type = transactionMap.getString("type");
                 String date = transactionMap.getString("date");
                 String categoryId = transactionMap.getString("categoryId");
                 String notes = transactionMap.hasKey("notes") ? transactionMap.getString("notes") : "";
-                String createdAt = repository.getTodayDate();
+                String createdAt = transactionMap.hasKey("createdAt") ? transactionMap.getString("createdAt") : repository.getTodayDate();
                 
                 TransactionEntity transaction = new TransactionEntity(
                     id, amount, type, date, categoryId, notes, createdAt
@@ -326,7 +326,7 @@ public class RoomStorageModule extends ReactContextBaseJavaModule {
             try {
                 AppDatabase db = AppDatabase.getInstance(getReactApplicationContext());
                 
-                String id = String.valueOf(System.currentTimeMillis());
+                String id = subscriptionMap.hasKey("id") ? subscriptionMap.getString("id") : String.valueOf(System.currentTimeMillis());
                 String name = subscriptionMap.getString("name");
                 double amount = subscriptionMap.getDouble("amount");
                 String billingCycle = subscriptionMap.getString("billingCycle");
@@ -334,7 +334,7 @@ public class RoomStorageModule extends ReactContextBaseJavaModule {
                 String nextBillingDate = subscriptionMap.getString("nextBillingDate");
                 boolean isActive = subscriptionMap.hasKey("isActive") ? subscriptionMap.getBoolean("isActive") : true;
                 String description = subscriptionMap.hasKey("description") ? subscriptionMap.getString("description") : null;
-                String createdAt = repository.getTodayDate();
+                String createdAt = subscriptionMap.hasKey("createdAt") ? subscriptionMap.getString("createdAt") : repository.getTodayDate();
                 
                 com.ingatuang.money.database.SubscriptionEntity subscription = new com.ingatuang.money.database.SubscriptionEntity(
                     id, name, amount, billingCycle, startDate, nextBillingDate, isActive, description, createdAt

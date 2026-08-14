@@ -4,6 +4,14 @@ import { Platform } from 'react-native';
 
 const API_KEY_STORAGE_KEY = 'ingat_uang_api_key';
 const API_BASE_URL_KEY = 'ingat_uang_api_base_url';
+const USER_INFO_KEY = 'ingat_uang_user_info';
+
+export interface UserInfo {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: string;
+}
 
 /**
  * Save API key securely
@@ -102,11 +110,63 @@ export async function getApiBaseUrl(): Promise<string | null> {
 }
 
 /**
+ * Save User Info securely
+ */
+export async function saveUserInfo(user: UserInfo): Promise<void> {
+  try {
+    const data = JSON.stringify(user);
+    if (Platform.OS === 'web') {
+      localStorage.setItem(USER_INFO_KEY, data);
+    } else {
+      await SecureStore.setItemAsync(USER_INFO_KEY, data);
+    }
+  } catch (error) {
+    console.error('❌ [Secure Storage] Failed to save user info:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get User Info from secure storage
+ */
+export async function getUserInfo(): Promise<UserInfo | null> {
+  try {
+    let data: string | null;
+    if (Platform.OS === 'web') {
+      data = localStorage.getItem(USER_INFO_KEY);
+    } else {
+      data = await SecureStore.getItemAsync(USER_INFO_KEY);
+    }
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('❌ [Secure Storage] Failed to get user info:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete User Info from secure storage
+ */
+export async function deleteUserInfo(): Promise<void> {
+  try {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(USER_INFO_KEY);
+    } else {
+      await SecureStore.deleteItemAsync(USER_INFO_KEY);
+    }
+  } catch (error) {
+    console.error('❌ [Secure Storage] Failed to delete user info:', error);
+    throw error;
+  }
+}
+
+/**
  * Clear all secure storage data
  */
 export async function clearAllSecureData(): Promise<void> {
   try {
     await deleteApiKey();
+    await deleteUserInfo();
     if (Platform.OS === 'web') {
       localStorage.removeItem(API_BASE_URL_KEY);
     } else {

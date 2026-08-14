@@ -37,6 +37,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Linking from 'expo-linking';
 import { Colors, getRadius } from '@/constants/theme';
+import { pullFromServer } from '@/lib/sync/sync-service';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -127,9 +128,31 @@ export default function DashboardScreen() {
     eventEmitter.on(EVENTS.TRANSACTION_UPDATED, handleTransactionEvent);
     eventEmitter.on(EVENTS.WALLET_UPDATED, handleTransactionEvent);
 
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') loadData(true);
-    });
+    // Auto-pull dari server saat app aktif kembali (misalnya balik dari Shortcut iPhone)
+    const handleAppStateChange = async (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        // Reload lokal dulu
+        loadData(true);
+        // Coba pull dari server jika sudah login
+        try {
+          const [user, token] = await Promise.all([
+            storage.getUserInfo(),
+            storage.getApiKey(),
+          ]);
+          if (user && token) {
+            const newCount = await pullFromServer(token);
+            if (newCount > 0) {
+              // Ada data baru dari server → reload
+              loadData(true);
+            }
+          }
+        } catch {
+          // Silent fail — jangan ganggu UX kalau server tidak bisa dicapai
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       eventEmitter.off(EVENTS.TRANSACTION_ADDED, handleTransactionEvent);
@@ -321,6 +344,7 @@ export default function DashboardScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={{ height: insets.top, backgroundColor: theme.background }} />
+
       <FlatList
         data={filteredTransactions}
         keyExtractor={item => item.id}

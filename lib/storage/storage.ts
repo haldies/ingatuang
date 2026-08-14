@@ -327,12 +327,12 @@ export async function getTransactionsByMonth(year: number, month: number): Promi
   return filtered;
 }
 
-export async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> {
+export async function addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'> & Partial<Pick<Transaction, 'id' | 'createdAt'>>): Promise<Transaction> {
   try {
     const newTransaction: Transaction = {
       ...transaction,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
+      id: transaction.id ?? Date.now().toString(),
+      createdAt: transaction.createdAt ?? new Date().toISOString(),
     };
     return await queueWrite(async () => {
       const transactions = await getTransactions();
@@ -729,6 +729,20 @@ export async function updateSubscription(
     console.error('Error updating subscription:', error);
     throw error;
   }
+}
+
+export async function upsertSubscription(subscription: Subscription): Promise<Subscription> {
+  const subscriptions = await getSubscriptions();
+  const index = subscriptions.findIndex((item) => item.id === subscription.id);
+
+  if (index >= 0) {
+    subscriptions[index] = { ...subscriptions[index], ...subscription };
+  } else {
+    subscriptions.push(subscription);
+  }
+
+  await AsyncStorage.setItem(STORAGE_KEYS.SUBSCRIPTIONS, JSON.stringify(subscriptions));
+  return index >= 0 ? subscriptions[index] : subscription;
 }
 
 // Delete subscription

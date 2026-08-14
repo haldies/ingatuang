@@ -2,6 +2,7 @@
 import { Platform } from 'react-native';
 import * as RoomStorage from './room-storage';
 import * as AsyncStorageImpl from './storage';
+import * as SecureStorage from './secure-storage';
 
 // Determine which storage to use
 const useRoom = Platform.OS === 'android' && RoomStorage.isRoomStorageAvailable();
@@ -28,7 +29,7 @@ export const storage = {
     return transactions;
   },
 
-  async addTransaction(transaction: Omit<AsyncStorageImpl.Transaction, 'id' | 'createdAt'>) {
+  async addTransaction(transaction: Omit<AsyncStorageImpl.Transaction, 'id' | 'createdAt'> & Partial<Pick<AsyncStorageImpl.Transaction, 'id' | 'createdAt'>>) {
     console.log('💾 [Storage Adapter] addTransaction called');
     console.log('💾 [Storage Adapter] Using Room:', useRoom);
     console.log('💾 [Storage Adapter] Transaction:', transaction);
@@ -404,6 +405,27 @@ export const storage = {
     return await AsyncStorageImpl.updateSubscription(id, updates);
   },
 
+  async upsertSubscription(subscription: AsyncStorageImpl.Subscription) {
+    console.log('[Storage Adapter] upsertSubscription called');
+    console.log('[Storage Adapter] Using Room:', useRoom);
+
+    if (useRoom) {
+      const existing = await RoomStorage.getAllSubscriptions();
+      const found = existing.find((item) => item.id === subscription.id);
+      if (found) {
+        const result = await RoomStorage.updateSubscription(subscription.id, subscription);
+        if (!result) throw new Error('Failed to update subscription');
+        return result;
+      }
+
+      const result = await RoomStorage.addSubscription(subscription);
+      if (!result) throw new Error('Failed to add subscription to Room');
+      return result;
+    }
+
+    return await AsyncStorageImpl.upsertSubscription(subscription);
+  },
+
   async deleteSubscription(id: string) {
     console.log('💾 [Storage Adapter] deleteSubscription called');
     console.log('💾 [Storage Adapter] Using Room:', useRoom);
@@ -573,7 +595,13 @@ export const storage = {
   setCurrency: (currency: string) => AsyncStorageImpl.setCurrency(currency),
   getCompactCurrency: () => AsyncStorageImpl.getCompactCurrency(),
   setCompactCurrency: (enabled: boolean) => AsyncStorageImpl.setCompactCurrency(enabled),
-  getApiKey: () => AsyncStorageImpl.getApiKey(),
+  getApiKey: () => SecureStorage.getApiKey(),
+  saveApiKey: (key: string) => SecureStorage.saveApiKey(key),
+  getApiBaseUrl: () => SecureStorage.getApiBaseUrl(),
+  saveApiBaseUrl: (url: string) => SecureStorage.saveApiBaseUrl(url),
+  getUserInfo: () => SecureStorage.getUserInfo(),
+  saveUserInfo: (user: SecureStorage.UserInfo) => SecureStorage.saveUserInfo(user),
+  deleteUserInfo: () => SecureStorage.deleteUserInfo(),
   generateApiKey: () => AsyncStorageImpl.generateApiKey(),
   getTheme: () => AsyncStorageImpl.getTheme(),
   setTheme: (theme: 'system' | 'light' | 'dark') => AsyncStorageImpl.setTheme(theme),

@@ -222,7 +222,34 @@
     "add_sample": "Add Sample Data",
     "clear_data": "Clear All Data",
     "version": "Ingat Uang Mobile v1.0.0",
-    "local_data_notice": "Data is stored locally on your device"
+    "local_data_notice": "Data is stored locally on your device",
+    "api": {
+      "header": "API & Service",
+      "status_connected": "Connected to Service",
+      "status_failed": "Connection Failed",
+      "status_disconnected": "Not Connected",
+      "config_title": "SERVICE CONFIGURATION",
+      "server_url": "Server URL (Backend)",
+      "api_key": "Dashboard API Key",
+      "get_key_web": "Get API Key from Web Dashboard →",
+      "test_connection": "Test Connection",
+      "save_settings": "Save",
+      "save_success": "Settings saved successfully",
+      "api_usage_info": "API Key is used to securely synchronize data with IngatUang cloud services."
+    },
+    "auth": {
+      "login_title": "Sign In to Account",
+      "login_desc": "Sync and back up your data.",
+      "email": "Email",
+      "password": "Password",
+      "login_btn": "Sign In Now",
+      "logging_in": "Processing...",
+      "login_success": "Signed in successfully",
+      "login_error": "Invalid email or password",
+      "logout": "Sign Out",
+      "not_logged_in": "Not Signed In",
+      "profile": "Profile"
+    }
   },
   "tax": {
     "header": "Income Tax (PPh)",
